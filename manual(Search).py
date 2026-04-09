@@ -3,59 +3,31 @@ import streamlit as st
 # 1. 페이지 설정
 st.set_page_config(page_title="설비 관리 시스템", layout="wide")
 
-# 2. 반응형 및 상단바 고정 CSS
+# 2. CSS 수정 (white-space 속성 추가)
 st.markdown("""
     <style>
-    /* 상단 커스텀 헤더 스타일 */
-    .custom-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 5px 0;
-        margin-bottom: 15px;
-        border-bottom: 2px solid #f0f2f6;
-    }
-    .header-title {
-        font-size: 22px !important;
-        font-weight: bold;
-        color: #1E1E1E;
-        margin: 0;
-    }
+    .header-title { font-size: 22px; font-weight: bold; margin: 0; }
     
-    /* 버튼 공통 스타일 */
-    div.stButton > button {
-        width: 100%;
-        font-weight: bold;
-        border-radius: 12px;
-        transition: 0.2s;
-    }
+    div.stButton > button { width: 100%; font-weight: bold; border-radius: 12px; }
 
-    /* 메인 4대 계통 버튼 */
     .main-btn div.stButton > button {
-        height: 100px;
-        font-size: 20px !important;
-        margin-bottom: 10px;
-        background: #ffffff;
-        border: 1px solid #ddd;
-        box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
+        height: 100px; font-size: 20px !important; margin-bottom: 10px;
+        background: #ffffff; border: 1px solid #ddd;
     }
 
-    /* 상단 메뉴 전용 작은 버튼 */
     .menu-btn div.stButton > button {
-        height: 38px !important;
-        padding: 0 12px !important;
-        font-size: 14px !important;
-        width: auto !important;
-        background: #f8f9fa;
-        border: 1px solid #eee;
+        height: 38px !important; padding: 0 12px !important;
+        font-size: 14px !important; width: auto !important;
     }
 
-    /* 상세 내용 카드 */
+    /* ⭐ 핵심: 줄바꿈(\n)을 화면에 그대로 표시하도록 설정 */
     .detail-card {
         padding: 15px;
         background-color: #f8f9fa;
         border-radius: 10px;
         border-left: 5px solid #4CAF50;
+        white-space: pre-wrap; /* 이 코드가 Enter를 인식하게 합니다 */
+        word-wrap: break-word; /* 긴 단어도 줄바꿈 처리 */
     }
     </style>
     """, unsafe_allow_html=True)
@@ -79,28 +51,27 @@ def admin_dialog():
     if pw == "7895":
         t_main = st.selectbox("계통", list(st.session_state.db.keys()))
         t_sub = st.selectbox("항목", st.session_state.db[t_main])
-        new_text = st.text_area("내용 수정", value=st.session_state.details[t_main][t_sub], height=150)
+        # st.text_area는 Enter 입력을 지원합니다.
+        new_text = st.text_area("내용 수정 (Enter로 줄바꿈 가능)", 
+                                value=st.session_state.details[t_main][t_sub], 
+                                height=200)
         if st.button("내용 저장"):
             st.session_state.details[t_main][t_sub] = new_text
             st.rerun()
 
-# --- [상단 헤더: 제목 왼쪽, 버튼 오른쪽 끝 고정] ---
-# HTML로 제목 레이아웃을 잡고, 버튼은 Streamlit 컬럼을 아주 좁게 쪼개서 우측 끝으로 밀어넣습니다.
+# --- [상단 헤더] ---
 t_col, b_col1, b_col2 = st.columns([7, 2, 1])
-
 with t_col:
     st.markdown("<p class='header-title'>⚡ 설비 유지보수 시스템</p>", unsafe_allow_html=True)
-
 with b_col1:
     st.markdown('<div class="menu-btn">', unsafe_allow_html=True)
-    if st.button("🏠메인화면"):
+    if st.button("🏠"):
         st.session_state.page = 'main'
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
-
 with b_col2:
     st.markdown('<div class="menu-btn">', unsafe_allow_html=True)
-    if st.button("⚙️설정"):
+    if st.button("⚙️"):
         admin_dialog()
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -119,7 +90,6 @@ if st.session_state.page == 'main':
                         st.markdown(f'<div class="detail-card">{content}</div>', unsafe_allow_html=True)
         st.divider()
 
-    # 메인 버튼
     st.markdown('<div class="main-btn">', unsafe_allow_html=True)
     for cat in st.session_state.db.keys():
         if st.button(cat, use_container_width=True):
@@ -133,4 +103,5 @@ elif st.session_state.page == 'detail':
     st.subheader(f"📍 {main_cat}")
     for sub in st.session_state.db[main_cat]:
         with st.expander(f"🔎 {sub}", expanded=False):
+            # detail-card 클래스가 적용된 div 안에서 줄바꿈이 작동합니다.
             st.markdown(f'<div class="detail-card">{st.session_state.details[main_cat][sub]}</div>', unsafe_allow_html=True)
