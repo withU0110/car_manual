@@ -1,38 +1,52 @@
 import streamlit as st
+import os
 
 # 1. 페이지 설정
 st.set_page_config(page_title="설비 관리 시스템", layout="wide")
 
-# 2. CSS 수정 (white-space 속성 추가)
+# 2. CSS 수정 (줄바꿈 완벽 지원 및 팝업 스타일)
 st.markdown("""
     <style>
+    /* 기본 공통 스타일 */
     .header-title { font-size: 22px; font-weight: bold; margin: 0; }
-    
     div.stButton > button { width: 100%; font-weight: bold; border-radius: 12px; }
-
+    
+    /* 상단 메뉴 작은 버튼 */
+    .menu-btn div.stButton > button {
+        height: 38px !important; padding: 0 12px !important;
+        font-size: 14px !important; width: auto !important;
+    }
+    
+    /* 메인 큰 버튼 */
     .main-btn div.stButton > button {
         height: 100px; font-size: 20px !important; margin-bottom: 10px;
         background: #ffffff; border: 1px solid #ddd;
     }
 
-    .menu-btn div.stButton > button {
-        height: 38px !important; padding: 0 12px !important;
-        font-size: 14px !important; width: auto !important;
-    }
-
-    /* ⭐ 핵심: 줄바꿈(\n)을 화면에 그대로 표시하도록 설정 */
-    .detail-card {
+    /* ⭐ 핵심: 줄바꿈 완벽 지원 스타일 */
+    .detail-card-content {
         padding: 15px;
         background-color: #f8f9fa;
         border-radius: 10px;
         border-left: 5px solid #4CAF50;
-        white-space: pre-wrap; /* 이 코드가 Enter를 인식하게 합니다 */
-        word-wrap: break-word; /* 긴 단어도 줄바꿈 처리 */
+        /* <pre> 태그 스타일 정의 */
+        font-family: inherit; /* 기본 폰트 사용 */
+        white-space: pre-wrap; /* 줄바꿈 문자('\n') 인식 및 자동 줄바꿈 */
+        word-wrap: break-word; /* 긴 단어 줄바꿈 */
+        margin: 0; /* 기본 마진 제거 */
+    }
+
+    /* 팝업 이미지 스타일 */
+    .summary-image {
+        width: 100%;
+        max-width: 600px;
+        height: auto;
+        border-radius: 10px;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. 데이터 초기화
+# 3. 데이터 초기화 (기존 동일)
 if 'db' not in st.session_state:
     st.session_state.db = {
         "구동계통": ["안내륜/안정륜", "주행륜 및 타이어", "기타"],
@@ -44,7 +58,7 @@ if 'db' not in st.session_state:
 if 'page' not in st.session_state:
     st.session_state.page = 'main'
 
-# --- [관리자 팝업] ---
+# --- [관리자 팝업] --- (기본 기능 유지)
 @st.dialog("🔐 관리자 모드")
 def admin_dialog():
     pw = st.text_input("비밀번호", type="password")
@@ -59,17 +73,38 @@ def admin_dialog():
             st.session_state.details[t_main][t_sub] = new_text
             st.rerun()
 
-# --- [상단 헤더] ---
-t_col, b_col1, b_col2 = st.columns([7, 2, 1])
+# --- [전체 요약 사진 팝업] ---
+@st.dialog("📋 전체 요약 사진")
+def summary_dialog():
+    # 💡 배포할 사진 파일명(예: summary.png)을 여기에 맞춰 수정하세요.
+    image_path = "summary.png" 
+    
+    if os.path.exists(image_path):
+        st.image(image_path, caption="설비 전체 요약도", use_column_width=True)
+    else:
+        st.warning(f"'{image_path}' 파일을 찾을 수 없습니다. (서버 업로드 필요)")
+        st.write("깃허브 저장소에 파이썬 파일과 같은 폴더에 사진을 올려두어야 합니다.")
+
+# --- [상단 헤더: 제목 및 버튼 이동] ---
+t_col, b_col1, b_col2, b_col3 = st.columns([5, 2, 2, 1])
+
 with t_col:
     st.markdown("<p class='header-title'>⚡ 설비 유지보수 시스템</p>", unsafe_allow_html=True)
+
 with b_col1:
     st.markdown('<div class="menu-btn">', unsafe_allow_html=True)
-    if st.button("🏠"):
+    if st.button("📋 요약"):
+        summary_dialog()
+    st.markdown('</div>', unsafe_allow_html=True)
+
+with b_col2:
+    st.markdown('<div class="menu-btn">', unsafe_allow_html=True)
+    if st.button("🏠 메인"):
         st.session_state.page = 'main'
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
-with b_col2:
+
+with b_col3:
     st.markdown('<div class="menu-btn">', unsafe_allow_html=True)
     if st.button("⚙️"):
         admin_dialog()
@@ -87,7 +122,8 @@ if st.session_state.page == 'main':
             for sub, content in items.items():
                 if search_query in content or search_query in sub:
                     with st.expander(f"✅ {cat} > {sub}", expanded=True):
-                        st.markdown(f'<div class="detail-card">{content}</div>', unsafe_allow_html=True)
+                        # ⭐ 줄바꿈 적용 출력: <pre> 태그 사용
+                        st.markdown(f'<pre class="detail-card-content">{content}</pre>', unsafe_allow_html=True)
         st.divider()
 
     st.markdown('<div class="main-btn">', unsafe_allow_html=True)
@@ -103,5 +139,5 @@ elif st.session_state.page == 'detail':
     st.subheader(f"📍 {main_cat}")
     for sub in st.session_state.db[main_cat]:
         with st.expander(f"🔎 {sub}", expanded=False):
-            # detail-card 클래스가 적용된 div 안에서 줄바꿈이 작동합니다.
-            st.markdown(f'<div class="detail-card">{st.session_state.details[main_cat][sub]}</div>', unsafe_allow_html=True)
+            # ⭐ 줄바꿈 적용 출력: <pre> 태그 사용
+            st.markdown(f'<pre class="detail-card-content">{st.session_state.details[main_cat][sub]}</pre>', unsafe_allow_html=True)
