@@ -104,3 +104,30 @@ with col_b2:
     st.markdown('</div>', unsafe_allow_html=True)
 
 st.divider()
+
+# --- [검색 및 메인/상세 로직] ---
+search_query = st.text_input("🔍 검색", placeholder="단어를 입력하세요", label_visibility="collapsed")
+
+if st.session_state.page == 'main':
+    if search_query:
+        for cat, items in st.session_state.details.items():
+            for sub, content in items.items():
+                if search_query in content or search_query in sub:
+                    with st.expander(f"✅ {cat} > {sub}", expanded=True):
+                        st.markdown(f'<div class="detail-card">{content}</div>', unsafe_allow_html=True)
+        st.divider()
+
+    st.markdown('<div class="main-btn">', unsafe_allow_html=True)
+    for cat in st.session_state.db.keys():
+        if st.button(cat, use_container_width=True):
+            st.session_state.selected_main = cat
+            st.session_state.page = 'detail'
+            st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+
+elif st.session_state.page == 'detail':
+    main_cat = st.session_state.selected_main
+    st.subheader(f"📍 {main_cat}")
+    for sub in st.session_state.db[main_cat]:
+        with st.expander(f"🔎 {sub}", expanded=False):
+            st.markdown(f'<div class="detail-card">{st.session_state.details[main_cat][sub]}</div>', unsafe_allow_html=True)
