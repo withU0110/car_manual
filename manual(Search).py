@@ -3,50 +3,51 @@ import streamlit as st
 # 1. 페이지 설정
 st.set_page_config(page_title="설비 관리 시스템", layout="wide")
 
-# 2. 고도화된 반응형 CSS
+# 2. 반응형 및 상단바 고정 CSS
 st.markdown("""
     <style>
-    /* 상단 헤더 컨테이너: 한 줄 고정 */
-    .header-container {
+    /* 상단 커스텀 헤더 스타일 */
+    .custom-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 10px 0;
-        margin-bottom: 20px;
+        padding: 5px 0;
+        margin-bottom: 15px;
+        border-bottom: 2px solid #f0f2f6;
     }
     .header-title {
-        font-size: 20px;
+        font-size: 22px !important;
         font-weight: bold;
-        color: #333;
+        color: #1E1E1E;
+        margin: 0;
     }
-    .header-buttons {
-        display: flex;
-        gap: 10px;
-    }
-
-    /* 버튼 기본 공통 스타일 */
+    
+    /* 버튼 공통 스타일 */
     div.stButton > button {
         width: 100%;
         font-weight: bold;
         border-radius: 12px;
+        transition: 0.2s;
+    }
+
+    /* 메인 4대 계통 버튼 */
+    .main-btn div.stButton > button {
+        height: 100px;
+        font-size: 20px !important;
+        margin-bottom: 10px;
         background: #ffffff;
         border: 1px solid #ddd;
         box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
     }
 
-    /* 메인 큰 버튼 스타일 */
-    .main-btn div.stButton > button {
-        height: 100px;
-        font-size: 20px !important;
-        margin-bottom: 10px;
-    }
-
-    /* 상단 메뉴 전용 작은 버튼 스타일 */
+    /* 상단 메뉴 전용 작은 버튼 */
     .menu-btn div.stButton > button {
-        height: 40px !important;
-        padding: 0 15px !important;
+        height: 38px !important;
+        padding: 0 12px !important;
         font-size: 14px !important;
-        width: auto !important; /* 글자 크기에 맞게 조절 */
+        width: auto !important;
+        background: #f8f9fa;
+        border: 1px solid #eee;
     }
 
     /* 상세 내용 카드 */
@@ -59,7 +60,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. 데이터 초기화 (기존 동일)
+# 3. 데이터 초기화
 if 'db' not in st.session_state:
     st.session_state.db = {
         "구동계통": ["안내륜/안정륜", "주행륜 및 타이어", "기타"],
@@ -83,31 +84,32 @@ def admin_dialog():
             st.session_state.details[t_main][t_sub] = new_text
             st.rerun()
 
-# --- [상단 헤더 커스텀 배치] ---
-# 가로로 나열하기 위해 columns 비율을 매우 세밀하게 조정합니다.
-col_t, col_b1, col_b2 = st.columns([6, 2.5, 1.5])
+# --- [상단 헤더: 제목 왼쪽, 버튼 오른쪽 끝 고정] ---
+# HTML로 제목 레이아웃을 잡고, 버튼은 Streamlit 컬럼을 아주 좁게 쪼개서 우측 끝으로 밀어넣습니다.
+t_col, b_col1, b_col2 = st.columns([7, 2, 1])
 
-with col_t:
-    st.markdown("<h3 style='margin:0;'>⚡ 설비 관리</h3>", unsafe_allow_html=True)
+with t_col:
+    st.markdown("<p class='header-title'>⚡ 설비 유지보수 시스템</p>", unsafe_allow_html=True)
 
-with col_b1:
+with b_col1:
     st.markdown('<div class="menu-btn">', unsafe_allow_html=True)
-    if st.button("🏠 메인"):
+    if st.button("🏠"):
         st.session_state.page = 'main'
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
-with col_b2:
+with b_col2:
     st.markdown('<div class="menu-btn">', unsafe_allow_html=True)
-    if st.button("⚙️"):  # 텍스트 제거하고 이모티콘만 남김
+    if st.button("⚙️"):
         admin_dialog()
     st.markdown('</div>', unsafe_allow_html=True)
 
 st.divider()
 
-# --- [검색 및 메인/상세 로직] ---
+# --- [검색창] ---
 search_query = st.text_input("🔍 검색", placeholder="단어를 입력하세요", label_visibility="collapsed")
 
+# --- [메인/상세 로직] ---
 if st.session_state.page == 'main':
     if search_query:
         for cat, items in st.session_state.details.items():
@@ -117,6 +119,7 @@ if st.session_state.page == 'main':
                         st.markdown(f'<div class="detail-card">{content}</div>', unsafe_allow_html=True)
         st.divider()
 
+    # 메인 버튼
     st.markdown('<div class="main-btn">', unsafe_allow_html=True)
     for cat in st.session_state.db.keys():
         if st.button(cat, use_container_width=True):
