@@ -93,14 +93,14 @@ with t_col:
 
 with b_col1:
     st.markdown('<div class="menu-btn">', unsafe_allow_html=True)
-    if st.button("🏠"):
+    if st.button("🏠메인화면"):
         st.session_state.page = 'main'
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
 with b_col2:
     st.markdown('<div class="menu-btn">', unsafe_allow_html=True)
-    if st.button("⚙️"):
+    if st.button("⚙️설정"):
         admin_dialog()
     st.markdown('</div>', unsafe_allow_html=True)
 
