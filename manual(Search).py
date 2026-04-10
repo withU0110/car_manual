@@ -1,10 +1,13 @@
 import streamlit as st
 import os
+import json
+import base64
+import requests
 
-# 1. 페이지 설정
+# ── 페이지 설정 ──
 st.set_page_config(page_title="설비 관리 시스템", layout="wide")
 
-# 2. CSS
+# ── CSS ──
 st.markdown("""
     <style>
     .block-container {
@@ -12,7 +15,6 @@ st.markdown("""
         padding-left: 1rem !important;
         padding-right: 1rem !important;
     }
-
     .header-title {
         font-size: 24px !important;
         font-weight: bold;
@@ -20,8 +22,6 @@ st.markdown("""
         text-align: center;
         margin-bottom: 12px;
     }
-
-    /* 모든 버튼 공통 */
     div.stButton > button {
         width: 100%;
         height: 72px;
@@ -34,14 +34,11 @@ st.markdown("""
         margin-bottom: 10px;
         transition: 0.2s;
     }
-
-    /* 메뉴 버튼만 색상 구분 */
     .menu-section div.stButton > button {
         border: 2px solid #2E7D32 !important;
         color: #2E7D32 !important;
         height: 72px !important;
     }
-
     .detail-card-content {
         padding: 15px;
         background-color: #f8f9fa;
@@ -56,34 +53,81 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. 데이터 초기화
-if 'db' not in st.session_state:
-    st.session_state.db = {
-        "구동계통": ["안내륜/안정륜", "주행륜 및 타이어", "기타"],
-        "공압계통": ["공압-1", "공압-2", "공압-3"],
-        "제어계통": ["제어-1", "제어-2", "제어-3"],
-        "기타분야": ["기타-1", "기타-2", "기타-3"]
+# ── GitHub API 설정 ──
+GITHUB_TOKEN     = st.secrets["GITHUB_TOKEN"]
+GITHUB_REPO      = st.secrets["GITHUB_REPO"]       # 예: "hong/manual-app"
+GITHUB_FILE_PATH = st.secrets["GITHUB_FILE_PATH"]  # "data.json"
+GITHUB_API_URL   = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE_PATH}"
+HEADERS          = {
+    "Authorization": f"token {GITHUB_TOKEN}",
+    "Accept": "application/vnd.github.v3+json"
+}
+
+# ── GitHub에서 data.json 불러오기 ──
+@st.cache_data(ttl=60)  # 60초 캐시 (너무 잦은 API 호출 방지)
+def load_data_from_github():
+    res = requests.get(GITHUB_API_URL, headers=HEADERS)
+    if res.status_code == 200:
+        content = res.json()["content"]
+        decoded = base64.b64decode(content).decode("utf-8")
+        return json.loads(decoded)
+    else:
+        st.error(f"data.json 불러오기 실패: {res.status_code}")
+        return {}
+
+# ── GitHub에 data.json 저장하기 ──
+def save_data_to_github(data: dict):
+    # 현재 파일의 SHA 가져오기 (업데이트에 필요)
+    res = requests.get(GITHUB_API_URL, headers=HEADERS)
+    if res.status_code != 200:
+        st.error("저장 실패: 파일 SHA를 가져올 수 없습니다.")
+        return False
+
+    sha = res.json()["sha"]
+    json_str = json.dumps(data, ensure_ascii=False, indent=2)
+    encoded  = base64.b64encode(json_str.encode("utf-8")).decode("utf-8")
+
+    payload = {
+        "message": "Update data.json via Streamlit app",
+        "content": encoded,
+        "sha": sha
     }
-    st.session_state.details = {
-        k: {sub: f"{sub}의 점검 내용입니다." for sub in v}
-        for k, v in st.session_state.db.items()
-    }
+    put_res = requests.put(GITHUB_API_URL, headers=HEADERS, json=payload)
+
+    if put_res.status_code in (200, 201):
+        st.cache_data.clear()   # 캐시 초기화 → 다음 로드 시 최신 데이터 반영
+        return True
+    else:
+        st.error(f"저장 실패: {put_res.status_code} {put_res.text}")
+        return False
+
+# ── 데이터 로드 ──
+details = load_data_from_github()
+DB_KEYS = list(details.keys())  # 계통 목록
+
+# ── page 초기화 ──
 if 'page' not in st.session_state:
     st.session_state.page = 'main'
 
-# --- [관리자 팝업] ---
+# ── 관리자 팝업 ──
 @st.dialog("🔐 관리자 모드")
 def admin_dialog():
     pw = st.text_input("비밀번호", type="password")
     if pw == "7895":
-        t_main = st.selectbox("계통", list(st.session_state.db.keys()))
-        t_sub = st.selectbox("항목", st.session_state.db[t_main])
-        new_text = st.text_area("내용 수정", value=st.session_state.details[t_main][t_sub], height=200)
-        if st.button("내용 저장"):
-            st.session_state.details[t_main][t_sub] = new_text
-            st.rerun()
+        t_main = st.selectbox("계통", DB_KEYS)
+        t_sub  = st.selectbox("항목", list(details[t_main].keys()))
+        new_text = st.text_area(
+            "내용 수정",
+            value=details[t_main][t_sub],
+            height=200
+        )
+        if st.button("💾 저장 (GitHub 반영)"):
+            details[t_main][t_sub] = new_text
+            ok = save_data_to_github(details)
+            if ok:
+                st.success("저장 완료! GitHub data.json이 업데이트됐습니다.")
 
-# --- [전체 요약 사진 팝업] ---
+# ── 요약도 팝업 ──
 @st.dialog("📋 전체 요약도")
 def summary_dialog():
     image_path = "summary.png"
@@ -95,10 +139,9 @@ def summary_dialog():
 
 # ── 화면 구성 ──
 
-# 1. 타이틀
 st.markdown("<p class='header-title'>⚡ 설비 유지보수 시스템</p>", unsafe_allow_html=True)
 
-# 2. 상단 메뉴 - 계통 버튼과 동일하게 한 줄씩 세로 나열 (메인/요약/설정 순)
+# 상단 메뉴 (한 줄씩 세로 나열)
 st.markdown('<div class="menu-section">', unsafe_allow_html=True)
 
 if st.button("🏠 메인", use_container_width=True):
@@ -115,18 +158,18 @@ st.markdown('</div>', unsafe_allow_html=True)
 
 st.divider()
 
-# 3. 검색창
+# 검색창
 search_query = st.text_input(
     "🔍 문제점 검색",
     placeholder="단어 입력",
     label_visibility="collapsed"
 )
 
-# 4. 메인 / 상세 로직
+# 메인 / 상세 로직
 if st.session_state.page == 'main':
     if search_query:
         found = False
-        for cat, items in st.session_state.details.items():
+        for cat, items in details.items():
             for sub, content in items.items():
                 if search_query in content or search_query in sub:
                     found = True
@@ -139,7 +182,7 @@ if st.session_state.page == 'main':
             st.info("검색 결과가 없습니다.")
         st.divider()
 
-    for cat in st.session_state.db.keys():
+    for cat in DB_KEYS:
         if st.button(cat, use_container_width=True):
             st.session_state.selected_main = cat
             st.session_state.page = 'detail'
@@ -148,9 +191,9 @@ if st.session_state.page == 'main':
 elif st.session_state.page == 'detail':
     main_cat = st.session_state.selected_main
     st.subheader(f"📍 {main_cat}")
-    for sub in st.session_state.db[main_cat]:
+    for sub, content in details[main_cat].items():
         with st.expander(f"🔎 {sub}", expanded=False):
             st.markdown(
-                f'<pre class="detail-card-content">{st.session_state.details[main_cat][sub]}</pre>',
+                f'<pre class="detail-card-content">{content}</pre>',
                 unsafe_allow_html=True
             )
