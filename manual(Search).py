@@ -3,6 +3,7 @@ import os
 import json
 import base64
 import requests
+import html
 
 # ── 페이지 설정 ──
 st.set_page_config(page_title="설비 관리 시스템", layout="wide")
@@ -45,18 +46,20 @@ st.markdown("""
         border-radius: 10px;
         border-left: 5px solid #4CAF50;
         font-family: inherit;
-        white-space: pre-wrap;
+        white-space: pre-wrap;   /* ← 줄바꿈 보존 */
         word-wrap: break-word;
+        word-break: keep-all;
         margin: 0;
         font-size: 15px;
+        line-height: 1.7;
     }
     </style>
     """, unsafe_allow_html=True)
 
 # ── GitHub API 설정 ──
 GITHUB_TOKEN     = st.secrets["GITHUB_TOKEN"]
-GITHUB_REPO      = st.secrets["GITHUB_REPO"]       # 예: "hong/manual-app"
-GITHUB_FILE_PATH = st.secrets["GITHUB_FILE_PATH"]  # "data.json"
+GITHUB_REPO      = st.secrets["GITHUB_REPO"]
+GITHUB_FILE_PATH = st.secrets["GITHUB_FILE_PATH"]
 GITHUB_API_URL   = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_FILE_PATH}"
 HEADERS          = {
     "Authorization": f"token {GITHUB_TOKEN}",
@@ -64,7 +67,7 @@ HEADERS          = {
 }
 
 # ── GitHub에서 data.json 불러오기 ──
-@st.cache_data(ttl=60)  # 60초 캐시 (너무 잦은 API 호출 방지)
+@st.cache_data(ttl=60)
 def load_data_from_github():
     res = requests.get(GITHUB_API_URL, headers=HEADERS)
     if res.status_code == 200:
@@ -77,7 +80,6 @@ def load_data_from_github():
 
 # ── GitHub에 data.json 저장하기 ──
 def save_data_to_github(data: dict):
-    # 현재 파일의 SHA 가져오기 (업데이트에 필요)
     res = requests.get(GITHUB_API_URL, headers=HEADERS)
     if res.status_code != 200:
         st.error("저장 실패: 파일 SHA를 가져올 수 없습니다.")
@@ -95,17 +97,26 @@ def save_data_to_github(data: dict):
     put_res = requests.put(GITHUB_API_URL, headers=HEADERS, json=payload)
 
     if put_res.status_code in (200, 201):
-        st.cache_data.clear()   # 캐시 초기화 → 다음 로드 시 최신 데이터 반영
+        st.cache_data.clear()
         return True
     else:
         st.error(f"저장 실패: {put_res.status_code} {put_res.text}")
         return False
 
+# ── 줄바꿈 안전 렌더링 함수 ──
+def render_content(text: str) -> str:
+    """
+    1) html.escape() 로 <, >, & 등 특수문자 이스케이프
+    2) \n → <br> 변환
+    → <pre> 없이 <div> 사용해도 줄바꿈이 100% 보장됨
+    """
+    escaped = html.escape(text)          # XSS 방지 + 특수문자 보호
+    return escaped.replace("\n", "<br>") # 줄바꿈 변환
+
 # ── 데이터 로드 ──
 details = load_data_from_github()
-DB_KEYS = list(details.keys())  # 계통 목록
+DB_KEYS = list(details.keys())
 
-# ── page 초기화 ──
 if 'page' not in st.session_state:
     st.session_state.page = 'main'
 
@@ -117,12 +128,12 @@ def admin_dialog():
         t_main = st.selectbox("계통", DB_KEYS)
         t_sub  = st.selectbox("항목", list(details[t_main].keys()))
         new_text = st.text_area(
-            "내용 수정",
+            "내용 수정 (엔터로 줄바꿈 가능)",
             value=details[t_main][t_sub],
             height=200
         )
         if st.button("💾 저장 (GitHub 반영)"):
-            details[t_main][t_sub] = new_text
+            details[t_main][t_sub] = new_text  # \n 그대로 저장
             ok = save_data_to_github(details)
             if ok:
                 st.success("저장 완료! GitHub data.json이 업데이트됐습니다.")
@@ -138,34 +149,27 @@ def summary_dialog():
         st.info("GitHub에 summary.png 파일이 있는지 확인해 주세요.")
 
 # ── 화면 구성 ──
-
 st.markdown("<p class='header-title'>⚡ 설비 유지보수 시스템</p>", unsafe_allow_html=True)
 
-# 상단 메뉴 (한 줄씩 세로 나열)
 st.markdown('<div class="menu-section">', unsafe_allow_html=True)
-
 if st.button("🏠 메인", use_container_width=True):
     st.session_state.page = 'main'
     st.rerun()
-
 if st.button("📋 요약도", use_container_width=True):
     summary_dialog()
-
 if st.button("⚙️ 설정", use_container_width=True):
     admin_dialog()
-
 st.markdown('</div>', unsafe_allow_html=True)
 
 st.divider()
 
-# 검색창
 search_query = st.text_input(
     "🔍 문제점 검색",
     placeholder="단어 입력",
     label_visibility="collapsed"
 )
 
-# 메인 / 상세 로직
+# ── 메인 / 상세 로직 ──
 if st.session_state.page == 'main':
     if search_query:
         found = False
@@ -175,7 +179,7 @@ if st.session_state.page == 'main':
                     found = True
                     with st.expander(f"✅ {cat} > {sub}", expanded=True):
                         st.markdown(
-                            f'<pre class="detail-card-content">{content}</pre>',
+                            f'<div class="detail-card-content">{render_content(content)}</div>',
                             unsafe_allow_html=True
                         )
         if not found:
@@ -194,6 +198,6 @@ elif st.session_state.page == 'detail':
     for sub, content in details[main_cat].items():
         with st.expander(f"🔎 {sub}", expanded=False):
             st.markdown(
-                f'<pre class="detail-card-content">{content}</pre>',
+                f'<div class="detail-card-content">{render_content(content)}</div>',
                 unsafe_allow_html=True
             )
