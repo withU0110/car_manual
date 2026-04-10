@@ -4,49 +4,54 @@ import os
 # 1. 페이지 설정
 st.set_page_config(page_title="설비 관리 시스템", layout="wide")
 
-# 2. CSS 최적화 (모든 버튼을 큼직한 세로 나열 스타일로 통일)
+# 2. CSS
 st.markdown("""
     <style>
-    /* 상단 타이틀 스타일 */
-    .header-title { 
-        font-size: 24px !important; 
-        font-weight: bold; 
+    .block-container {
+        padding-top: 1rem !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+
+    .header-title {
+        font-size: 24px !important;
+        font-weight: bold;
         color: #1E1E1E;
         text-align: center;
-        margin-bottom: 20px;
+        margin-bottom: 12px;
     }
-    
-    /* 모든 버튼 공통 디자인 (구동/공압 버튼 스타일과 통일) */
+
+    /* 모든 버튼 공통 */
     div.stButton > button {
         width: 100%;
-        height: 80px; /* 모바일 터치 최적화 높이 */
+        height: 72px;
         font-size: 18px !important;
         font-weight: bold;
         border-radius: 15px;
         background: #ffffff;
         border: 1px solid #ddd;
         box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
-        margin-bottom: 12px;
+        margin-bottom: 10px;
         transition: 0.2s;
     }
-    
-    /* 메뉴용 버튼 색상 살짝 다르게 (선택 사항) */
+
+    /* 메뉴 버튼만 색상 구분 */
     .menu-section div.stButton > button {
-        border-color: #2E7D32;
-        color: #2E7D32;
-        height: 60px; /* 메뉴 버튼은 살짝 낮게 */
+        border: 2px solid #2E7D32 !important;
+        color: #2E7D32 !important;
+        height: 72px !important;
     }
 
-    /* 줄바꿈(\n) 완벽 지원 카드 */
     .detail-card-content {
         padding: 15px;
         background-color: #f8f9fa;
         border-radius: 10px;
         border-left: 5px solid #4CAF50;
         font-family: inherit;
-        white-space: pre-wrap; 
+        white-space: pre-wrap;
         word-wrap: break-word;
         margin: 0;
+        font-size: 15px;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -59,7 +64,10 @@ if 'db' not in st.session_state:
         "제어계통": ["제어-1", "제어-2", "제어-3"],
         "기타분야": ["기타-1", "기타-2", "기타-3"]
     }
-    st.session_state.details = {k: {sub: f"{sub}의 점검 내용입니다." for sub in v} for k, v in st.session_state.db.items()}
+    st.session_state.details = {
+        k: {sub: f"{sub}의 점검 내용입니다." for sub in v}
+        for k, v in st.session_state.db.items()
+    }
 if 'page' not in st.session_state:
     st.session_state.page = 'main'
 
@@ -85,43 +93,52 @@ def summary_dialog():
         st.error(f"'{image_path}' 파일을 찾을 수 없습니다.")
         st.info("GitHub에 summary.png 파일이 있는지 확인해 주세요.")
 
-# --- [화면 구성] ---
+# ── 화면 구성 ──
 
-# 1. 최상단 타이틀
+# 1. 타이틀
 st.markdown("<p class='header-title'>⚡ 설비 유지보수 시스템</p>", unsafe_allow_html=True)
 
-# 2. 상단 메뉴 버튼 (한 줄씩 큼직하게 배치)
+# 2. 상단 메뉴 - 계통 버튼과 동일하게 한 줄씩 세로 나열 (메인/요약/설정 순)
 st.markdown('<div class="menu-section">', unsafe_allow_html=True)
-col_menu1, col_menu2, col_menu3 = st.columns(3) # 모바일에서 3분할이 작으면 그냥 세로로 나열됩니다.
 
-with col_menu1:
-    if st.button("📋 요약도"):
-        summary_dialog()
-with col_menu2:
-    if st.button("🏠 메인"):
-        st.session_state.page = 'main'
-        st.rerun()
-with col_menu3:
-    if st.button("⚙️ 설정"):
-        admin_dialog()
+if st.button("🏠 메인", use_container_width=True):
+    st.session_state.page = 'main'
+    st.rerun()
+
+if st.button("📋 요약도", use_container_width=True):
+    summary_dialog()
+
+if st.button("⚙️ 설정", use_container_width=True):
+    admin_dialog()
+
 st.markdown('</div>', unsafe_allow_html=True)
 
 st.divider()
 
 # 3. 검색창
-search_query = st.text_input("🔍 문제점 검색", placeholder="단어 입력", label_visibility="collapsed")
+search_query = st.text_input(
+    "🔍 문제점 검색",
+    placeholder="단어 입력",
+    label_visibility="collapsed"
+)
 
-# 4. 메인/상세 로직
+# 4. 메인 / 상세 로직
 if st.session_state.page == 'main':
     if search_query:
+        found = False
         for cat, items in st.session_state.details.items():
             for sub, content in items.items():
                 if search_query in content or search_query in sub:
+                    found = True
                     with st.expander(f"✅ {cat} > {sub}", expanded=True):
-                        st.markdown(f'<pre class="detail-card-content">{content}</pre>', unsafe_allow_html=True)
+                        st.markdown(
+                            f'<pre class="detail-card-content">{content}</pre>',
+                            unsafe_allow_html=True
+                        )
+        if not found:
+            st.info("검색 결과가 없습니다.")
         st.divider()
 
-    # 4대 계통 버튼 (한 줄씩 큼직하게)
     for cat in st.session_state.db.keys():
         if st.button(cat, use_container_width=True):
             st.session_state.selected_main = cat
@@ -133,4 +150,7 @@ elif st.session_state.page == 'detail':
     st.subheader(f"📍 {main_cat}")
     for sub in st.session_state.db[main_cat]:
         with st.expander(f"🔎 {sub}", expanded=False):
-            st.markdown(f'<pre class="detail-card-content">{st.session_state.details[main_cat][sub]}</pre>', unsafe_allow_html=True)
+            st.markdown(
+                f'<pre class="detail-card-content">{st.session_state.details[main_cat][sub]}</pre>',
+                unsafe_allow_html=True
+            )
