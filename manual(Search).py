@@ -144,9 +144,18 @@ def summary_dialog():
     image_path = "summary.png"
     if os.path.exists(image_path):
         st.image(image_path, use_container_width=True)
+        
+        with open(image_path, "rb") as f:
+            img_bytes = f.read()
+        st.download_button(
+            label="⬇️ 이미지 다운로드",
+            data=img_bytes,
+            file_name="summary.png",
+            mime="image/png",
+            use_container_width=True
+        )
     else:
         st.error(f"'{image_path}' 파일을 찾을 수 없습니다.")
-        st.info("GitHub에 summary.png 파일이 있는지 확인해 주세요.")
 
 # ── 화면 구성 ──
 st.markdown("<p class='header-title'>⚡ 설비 유지보수 시스템</p>", unsafe_allow_html=True)
