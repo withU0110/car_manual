@@ -46,7 +46,7 @@ st.markdown("""
         border-radius: 10px;
         border-left: 5px solid #4CAF50;
         font-family: inherit;
-        white-space: pre-wrap;   /* ← 줄바꿈 보존 */
+        white-space: pre-wrap;
         word-wrap: break-word;
         word-break: keep-all;
         margin: 0;
@@ -103,15 +103,58 @@ def save_data_to_github(data: dict):
         st.error(f"저장 실패: {put_res.status_code} {put_res.text}")
         return False
 
+# ── GitHub에 이미지 업로드하기 ──
+def upload_image_to_github(img_file) -> str | None:
+    """
+    이미지를 GitHub /images/ 폴더에 업로드하고 raw URL을 반환합니다.
+    동일 파일명이 존재하면 SHA를 가져와 덮어씁니다.
+    반환값: raw URL 문자열 또는 None (실패 시)
+    """
+    img_bytes = img_file.read()
+    encoded   = base64.b64encode(img_bytes).decode("utf-8")
+    filename  = img_file.name
+    img_api_url = (
+        f"https://api.github.com/repos/{GITHUB_REPO}/contents/images/{filename}"
+    )
+
+    # 기존 파일 SHA 확인 (덮어쓰기용)
+    check = requests.get(img_api_url, headers=HEADERS)
+    sha   = check.json().get("sha") if check.status_code == 200 else None
+
+    payload = {
+        "message": f"Upload image: {filename}",
+        "content": encoded,
+    }
+    if sha:
+        payload["sha"] = sha
+
+    res = requests.put(img_api_url, headers=HEADERS, json=payload)
+
+    if res.status_code in (200, 201):
+        raw_url = (
+            f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/images/{filename}"
+        )
+        return raw_url
+    else:
+        st.error(f"이미지 업로드 실패 ({filename}): {res.status_code} {res.text}")
+        return None
+
+# ── GitHub에서 summary.png raw URL 생성 ──
+def get_summary_raw_url() -> str:
+    return f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/summary.png"
+
 # ── 줄바꿈 안전 렌더링 함수 ──
 def render_content(text: str) -> str:
-    """
-    1) html.escape() 로 <, >, & 등 특수문자 이스케이프
-    2) \n → <br> 변환
-    → <pre> 없이 <div> 사용해도 줄바꿈이 100% 보장됨
-    """
-    escaped = html.escape(text)          # XSS 방지 + 특수문자 보호
-    return escaped.replace("\n", "<br>") # 줄바꿈 변환
+    escaped = html.escape(text)
+    return escaped.replace("\n", "<br>")
+
+# ── content 값 파싱 헬퍼 ──
+# data.json 항목은 기존(문자열) 또는 신규(dict: {text, images}) 두 가지 형태를 모두 지원
+def parse_content(content) -> tuple[str, list[str]]:
+    """content → (text: str, images: list[str]) 반환"""
+    if isinstance(content, dict):
+        return content.get("text", ""), content.get("images", [])
+    return content, []  # 기존 문자열 구조 하위 호환
 
 # ── 데이터 로드 ──
 details = load_data_from_github()
@@ -127,13 +170,68 @@ def admin_dialog():
     if pw == "7895":
         t_main = st.selectbox("계통", DB_KEYS)
         t_sub  = st.selectbox("항목", list(details[t_main].keys()))
+
+        # 기존 데이터 파싱
+        current_content = details[t_main][t_sub]
+        current_text, current_images = parse_content(current_content)
+
+        # ── 텍스트 수정 ──
         new_text = st.text_area(
             "내용 수정 (엔터로 줄바꿈 가능)",
-            value=details[t_main][t_sub],
+            value=current_text,
             height=200
         )
+
+        # ── 기존 이미지 목록 표시 및 삭제 ──
+        st.markdown("**📎 현재 첨부 이미지**")
+        updated_images = list(current_images)  # 복사본으로 수정
+
+        if updated_images:
+            for idx, img_url in enumerate(current_images):
+                col_img, col_del = st.columns([5, 1])
+                with col_img:
+                    st.image(img_url, use_container_width=True)
+                with col_del:
+                    if st.button("🗑️", key=f"del_img_{idx}"):
+                        updated_images.remove(img_url)
+                        st.rerun()
+        else:
+            st.caption("첨부된 이미지가 없습니다.")
+
+        # ── 새 이미지 업로드 ──
+        st.markdown("**➕ 이미지 추가 업로드**")
+        uploaded_imgs = st.file_uploader(
+            "이미지 선택 (png / jpg / jpeg)",
+            type=["png", "jpg", "jpeg"],
+            accept_multiple_files=True,
+            key="img_uploader"
+        )
+
+        # ── 저장 버튼 ──
         if st.button("💾 저장 (GitHub 반영)"):
-            details[t_main][t_sub] = new_text  # \n 그대로 저장
+            new_img_urls = []
+
+            # 새 이미지 GitHub 업로드
+            if uploaded_imgs:
+                with st.spinner("이미지 업로드 중..."):
+                    for img_file in uploaded_imgs:
+                        url = upload_image_to_github(img_file)
+                        if url:
+                            new_img_urls.append(url)
+
+            all_images = updated_images + new_img_urls
+
+            # data.json에 저장할 값 결정
+            # 이미지가 없고 기존 구조가 문자열이면 문자열로 유지 (하위 호환)
+            if all_images:
+                details[t_main][t_sub] = {
+                    "text": new_text,
+                    "images": all_images
+                }
+            else:
+                # 이미지 없음 → 문자열로 저장 (기존 호환)
+                details[t_main][t_sub] = new_text
+
             ok = save_data_to_github(details)
             if ok:
                 st.success("저장 완료! GitHub data.json이 업데이트됐습니다.")
@@ -141,12 +239,15 @@ def admin_dialog():
 # ── 요약도 팝업 ──
 @st.dialog("📋 전체 요약도")
 def summary_dialog():
-    image_path = "summary.png"
-    if os.path.exists(image_path):
-        st.image(image_path, use_container_width=True)
-        
-        with open(image_path, "rb") as f:
-            img_bytes = f.read()
+    # GitHub raw URL 로 이미지 로드
+    raw_url = get_summary_raw_url()
+    res = requests.get(raw_url)
+
+    if res.status_code == 200:
+        img_bytes = res.content
+        st.image(img_bytes, use_container_width=True)
+
+        # ── 다운로드 버튼 ──
         st.download_button(
             label="⬇️ 이미지 다운로드",
             data=img_bytes,
@@ -155,7 +256,36 @@ def summary_dialog():
             use_container_width=True
         )
     else:
-        st.error(f"'{image_path}' 파일을 찾을 수 없습니다.")
+        # fallback: 로컬 파일
+        local_path = "summary.png"
+        if os.path.exists(local_path):
+            with open(local_path, "rb") as f:
+                img_bytes = f.read()
+            st.image(img_bytes, use_container_width=True)
+            st.download_button(
+                label="⬇️ 이미지 다운로드",
+                data=img_bytes,
+                file_name="summary.png",
+                mime="image/png",
+                use_container_width=True
+            )
+        else:
+            st.error("summary.png 파일을 GitHub 또는 로컬에서 찾을 수 없습니다.")
+            st.info("GitHub 저장소 루트에 summary.png 파일을 업로드해 주세요.")
+
+# ── 항목 상세 카드 렌더링 ──
+def render_item_card(content):
+    text, images = parse_content(content)
+    # 텍스트
+    st.markdown(
+        f'<div class="detail-card-content">{render_content(text)}</div>',
+        unsafe_allow_html=True
+    )
+    # 첨부 이미지
+    if images:
+        st.markdown("")
+        for img_url in images:
+            st.image(img_url, use_container_width=True)
 
 # ── 화면 구성 ──
 st.markdown("<p class='header-title'>⚡ 설비 유지보수 시스템</p>", unsafe_allow_html=True)
@@ -184,13 +314,11 @@ if st.session_state.page == 'main':
         found = False
         for cat, items in details.items():
             for sub, content in items.items():
-                if search_query in content or search_query in sub:
+                text, _ = parse_content(content)
+                if search_query in text or search_query in sub:
                     found = True
                     with st.expander(f"✅ {cat} > {sub}", expanded=True):
-                        st.markdown(
-                            f'<div class="detail-card-content">{render_content(content)}</div>',
-                            unsafe_allow_html=True
-                        )
+                        render_item_card(content)
         if not found:
             st.info("검색 결과가 없습니다.")
         st.divider()
@@ -206,7 +334,4 @@ elif st.session_state.page == 'detail':
     st.subheader(f"📍 {main_cat}")
     for sub, content in details[main_cat].items():
         with st.expander(f"🔎 {sub}", expanded=False):
-            st.markdown(
-                f'<div class="detail-card-content">{render_content(content)}</div>',
-                unsafe_allow_html=True
-            )
+            render_item_card(content)
