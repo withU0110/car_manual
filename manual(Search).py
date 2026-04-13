@@ -42,16 +42,23 @@ st.markdown("""
         color: #2E7D32 !important;
         height: 72px !important;
     }
+    /* 뒤로가기 버튼: key="back_btn" */
+    div[data-testid="stButton"]:has(button[kind="secondary"]#back_btn) > button,
+    button[data-testid="baseButton-secondary"]:has(+ *) {
+        height: 36px !important;
+    }
+    /* 전역 back_btn 스타일: aria-label 불가 → 첫번째 버튼 방식 대신 클래스 활용 */
     .back-btn div.stButton > button {
-        height: 44px !important;
-        font-size: 20px !important;
-        border: 2px solid #1565C0 !important;
+        height: 36px !important;
+        font-size: 15px !important;
+        border: 1px solid #1565C0 !important;
         color: #1565C0 !important;
-        border-radius: 12px !important;
+        border-radius: 8px !important;
         background: #ffffff !important;
-        box-shadow: 1px 1px 4px rgba(0,0,0,0.1) !important;
-        margin-bottom: 6px !important;
-        width: 100% !important;
+        box-shadow: none !important;
+        margin-bottom: 8px !important;
+        width: auto !important;
+        padding: 0 16px !important;
     }
     .detail-card-content {
         padding: 15px;
@@ -445,12 +452,6 @@ search_query = st.text_input(
     label_visibility="collapsed"
 )
 
-# ── query_params 뒤로가기 감지 (detail 페이지 HTML 버튼) ──
-if st.query_params.get("_back"):
-    st.query_params.clear()
-    st.session_state.page = 'main'
-    st.rerun()
-
 # ── 검색어 있으면 페이지 무관 전체 검색 ──
 if search_query:
     found = False
@@ -477,14 +478,14 @@ elif st.session_state.page == 'main':
 
 elif st.session_state.page == 'detail':
     main_cat = st.session_state.selected_main
-    back_html = (
-        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">'
-        '<a href="?_back=1" style="font-size:26px;color:#1565C0;text-decoration:none;'
-        'line-height:1;font-weight:bold;">&#9664;</a>'
-        f'<span style="font-size:20px;font-weight:bold;">&#128205; {main_cat}</span>'
-        '</div>'
-    )
-    st.markdown(back_html, unsafe_allow_html=True)
+
+    st.markdown('<div class="back-btn">', unsafe_allow_html=True)
+    if st.button("◀  뒤로가기", key="back_btn"):
+        st.session_state.page = 'main'
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown(f"### 📍 {main_cat}")
 
     for sub, content in details[main_cat].items():
         with st.expander(f"🔎 {sub}", expanded=False):
