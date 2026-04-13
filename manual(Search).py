@@ -200,14 +200,55 @@ DB_KEYS = list(details.keys())
 
 if 'page' not in st.session_state:
     st.session_state.page = 'main'
+# 이미지 삭제 상태를 다이얼로그 재렌더링 간에 유지
+if 'deleted_img_indices' not in st.session_state:
+    st.session_state.deleted_img_indices = set()
+# 현재 관리자가 보고 있는 계통/항목 추적 (삭제 상태 초기화용)
+if 'admin_last_key' not in st.session_state:
+    st.session_state.admin_last_key = ""
+
+# ── 비밀번호 검증 (data.json의 __meta__.password 또는 기본값) ──
+DEFAULT_PW = "7895"
+
+def get_stored_password() -> str:
+    meta = details.get("__meta__", {})
+    return meta.get("password", DEFAULT_PW)
+
+def check_password(pw: str) -> bool:
+    return pw == get_stored_password()
+
+def save_password(new_pw: str) -> bool:
+    if "__meta__" not in details:
+        details["__meta__"] = {}
+    details["__meta__"]["password"] = new_pw
+    return save_data_to_github(details)
 
 # ── 관리자 팝업 ──
 @st.dialog("🔐 관리자 모드")
 def admin_dialog():
     pw = st.text_input("비밀번호", type="password")
-    if pw == "7895":
-        t_main = st.selectbox("계통", DB_KEYS)
-        t_sub  = st.selectbox("항목", list(details[t_main].keys()))
+    if not check_password(pw):
+        if pw:
+            st.error("비밀번호가 틀렸습니다.")
+        return
+
+    # ── 탭: 내용편집 / 비밀번호변경 ──
+    tab_edit, tab_pw = st.tabs(["📝 내용 편집", "🔑 비밀번호 변경"])
+
+    # ───────────────────────────────
+    # 탭1: 내용 편집 + 이미지 관리
+    # ───────────────────────────────
+    with tab_edit:
+        # __meta__ 키는 편집 대상에서 제외
+        edit_keys = [k for k in DB_KEYS if k != "__meta__"]
+        t_main = st.selectbox("계통", edit_keys, key="admin_main")
+        t_sub  = st.selectbox("항목", list(details[t_main].keys()), key="admin_sub")
+
+        # 계통/항목이 바뀌면 삭제 상태 초기화
+        current_key = f"{t_main}::{t_sub}"
+        if st.session_state.admin_last_key != current_key:
+            st.session_state.deleted_img_indices = set()
+            st.session_state.admin_last_key = current_key
 
         # 기존 데이터 파싱
         current_content = details[t_main][t_sub]
@@ -217,22 +258,32 @@ def admin_dialog():
         new_text = st.text_area(
             "내용 수정 (엔터로 줄바꿈 가능)",
             value=current_text,
-            height=200
+            height=200,
+            key="admin_textarea"
         )
 
         # ── 기존 이미지 목록 표시 및 삭제 ──
+        # rerun 없이 session_state로 삭제 상태 관리
         st.markdown("**📎 현재 첨부 이미지**")
-        updated_images = list(current_images)  # 복사본으로 수정
-
-        if updated_images:
+        if current_images:
             for idx, img_url in enumerate(current_images):
+                is_deleted = idx in st.session_state.deleted_img_indices
                 col_img, col_del = st.columns([5, 1])
                 with col_img:
-                    st.image(img_url, use_container_width=True)
+                    if is_deleted:
+                        st.markdown(
+                            f"<s style='color:gray;font-size:12px'>{img_url.split('/')[-1]} (삭제 예정)</s>",
+                            unsafe_allow_html=True
+                        )
+                    else:
+                        st.image(img_url, use_container_width=True)
                 with col_del:
-                    if st.button("🗑️", key=f"del_img_{idx}"):
-                        updated_images.remove(img_url)
-                        st.rerun()
+                    if is_deleted:
+                        if st.button("↩️", key=f"restore_{idx}", help="삭제 취소"):
+                            st.session_state.deleted_img_indices.discard(idx)
+                    else:
+                        if st.button("🗑️", key=f"del_{idx}", help="삭제 예약"):
+                            st.session_state.deleted_img_indices.add(idx)
         else:
             st.caption("첨부된 이미지가 없습니다.")
 
@@ -246,10 +297,14 @@ def admin_dialog():
         )
 
         # ── 저장 버튼 ──
-        if st.button("💾 저장 (GitHub 반영)"):
-            new_img_urls = []
+        if st.button("💾 저장 (GitHub 반영)", key="btn_save_content"):
+            # 삭제 표시되지 않은 기존 이미지만 유지
+            kept_images = [
+                url for idx, url in enumerate(current_images)
+                if idx not in st.session_state.deleted_img_indices
+            ]
 
-            # 새 이미지 GitHub 업로드
+            new_img_urls = []
             if uploaded_imgs:
                 with st.spinner("이미지 업로드 중..."):
                     for img_file in uploaded_imgs:
@@ -257,22 +312,38 @@ def admin_dialog():
                         if url:
                             new_img_urls.append(url)
 
-            all_images = updated_images + new_img_urls
+            all_images = kept_images + new_img_urls
 
-            # data.json에 저장할 값 결정
-            # 이미지가 없고 기존 구조가 문자열이면 문자열로 유지 (하위 호환)
             if all_images:
-                details[t_main][t_sub] = {
-                    "text": new_text,
-                    "images": all_images
-                }
+                details[t_main][t_sub] = {"text": new_text, "images": all_images}
             else:
-                # 이미지 없음 → 문자열로 저장 (기존 호환)
                 details[t_main][t_sub] = new_text
 
             ok = save_data_to_github(details)
             if ok:
+                # 저장 완료 후 삭제 상태 초기화
+                st.session_state.deleted_img_indices = set()
                 st.success("저장 완료! GitHub data.json이 업데이트됐습니다.")
+
+    # ───────────────────────────────
+    # 탭2: 비밀번호 변경
+    # ───────────────────────────────
+    with tab_pw:
+        st.markdown("현재 비밀번호로 인증된 상태입니다.")
+        new_pw1 = st.text_input("새 비밀번호", type="password", key="new_pw1")
+        new_pw2 = st.text_input("새 비밀번호 확인", type="password", key="new_pw2")
+
+        if st.button("🔒 비밀번호 변경", key="btn_change_pw"):
+            if not new_pw1:
+                st.error("새 비밀번호를 입력해 주세요.")
+            elif new_pw1 != new_pw2:
+                st.error("비밀번호가 일치하지 않습니다.")
+            elif new_pw1 == get_stored_password():
+                st.warning("현재 비밀번호와 동일합니다.")
+            else:
+                ok = save_password(new_pw1)
+                if ok:
+                    st.success("비밀번호가 변경되었습니다. 다음 로그인부터 적용됩니다.")
 
 # ── 요약도 팝업 ──
 @st.dialog("📋 전체 요약도")
