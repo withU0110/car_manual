@@ -417,30 +417,44 @@ search_query = st.text_input(
     label_visibility="collapsed"
 )
 
-# ── 메인 / 상세 로직 ──
-if st.session_state.page == 'main':
-    if search_query:
-        found = False
-        for cat, items in details.items():
-            for sub, content in items.items():
-                text, _ = parse_content(content)
-                if search_query in text or search_query in sub:
-                    found = True
-                    with st.expander(f"✅ {cat} > {sub}", expanded=True):
-                        render_item_card(content)
-        if not found:
-            st.info("검색 결과가 없습니다.")
-        st.divider()
+# ── 검색어 있으면 페이지 관계없이 전체 검색 결과 표시 ──
+if search_query:
+    found = False
+    for cat, items in details.items():
+        if cat == "__meta__":
+            continue
+        for sub, content in items.items():
+            text, _ = parse_content(content)
+            if search_query in text or search_query in sub:
+                found = True
+                with st.expander(f"✅ {cat} > {sub}", expanded=True):
+                    render_item_card(content)
+    if not found:
+        st.info("검색 결과가 없습니다.")
 
-    for cat in DB_KEYS:
-        if st.button(cat, use_container_width=True):
-            st.session_state.selected_main = cat
-            st.session_state.page = 'detail'
-            st.rerun()
+# ── 검색어 없을 때만 페이지 로직 ──
+else:
+    if st.session_state.page == 'main':
+        for cat in DB_KEYS:
+            if cat == "__meta__":
+                continue
+            if st.button(cat, use_container_width=True):
+                st.session_state.selected_main = cat
+                st.session_state.page = 'detail'
+                st.rerun()
 
-elif st.session_state.page == 'detail':
-    main_cat = st.session_state.selected_main
-    st.subheader(f"📍 {main_cat}")
-    for sub, content in details[main_cat].items():
-        with st.expander(f"🔎 {sub}", expanded=False):
-            render_item_card(content)
+    elif st.session_state.page == 'detail':
+        main_cat = st.session_state.selected_main
+
+        # ── 뒤로가기 버튼 + 현재 계통명 ──
+        col_back, col_title = st.columns([1, 8])
+        with col_back:
+            if st.button("◀", help="메인으로 돌아가기"):
+                st.session_state.page = 'main'
+                st.rerun()
+        with col_title:
+            st.subheader(f"📍 {main_cat}")
+
+        for sub, content in details[main_cat].items():
+            with st.expander(f"🔎 {sub}", expanded=False):
+                render_item_card(content)
