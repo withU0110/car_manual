@@ -4,6 +4,8 @@ import json
 import base64
 import requests
 import html
+from io import BytesIO
+from PIL import Image
 
 # ── 페이지 설정 ──
 st.set_page_config(page_title="설비 관리 시스템", layout="wide")
@@ -12,7 +14,7 @@ st.set_page_config(page_title="설비 관리 시스템", layout="wide")
 st.markdown("""
     <style>
     .block-container {
-        padding-top: 1rem !important;
+        padding-top: 4rem !important;
         padding-left: 1rem !important;
         padding-right: 1rem !important;
     }
@@ -103,16 +105,52 @@ def save_data_to_github(data: dict):
         st.error(f"저장 실패: {put_res.status_code} {put_res.text}")
         return False
 
+# ── 이미지 리사이즈 + 압축 (모바일 최적화) ──
+def compress_image(img_file, max_px: int = 1200, quality: int = 85) -> tuple[bytes, str]:
+    """
+    업로드된 이미지를 리사이즈·압축하여 bytes로 반환합니다.
+    - max_px  : 가로/세로 중 긴 변의 최대 픽셀 (기본 1200px ≈ 150dpi @ 8인치)
+    - quality : JPEG 압축 품질 0~95 (기본 85)
+    반환값: (압축된 bytes, 저장 파일명(확장자 .jpg로 통일))
+    """
+    img = Image.open(img_file)
+
+    # EXIF 회전 보정
+    try:
+        from PIL import ImageOps
+        img = ImageOps.exif_transpose(img)
+    except Exception:
+        pass
+
+    # RGBA / P 모드 → RGB 변환 (JPEG 저장 위해 필요)
+    if img.mode in ("RGBA", "P"):
+        img = img.convert("RGB")
+
+    # 긴 변 기준 리사이즈
+    w, h = img.size
+    if max(w, h) > max_px:
+        ratio = max_px / max(w, h)
+        img = img.resize((int(w * ratio), int(h * ratio)), Image.LANCZOS)
+
+    # JPEG로 압축
+    buf = BytesIO()
+    img.save(buf, format="JPEG", quality=quality, optimize=True)
+    buf.seek(0)
+
+    # 파일명 확장자를 .jpg로 통일
+    stem = os.path.splitext(img_file.name)[0]
+    return buf.read(), f"{stem}.jpg"
+
 # ── GitHub에 이미지 업로드하기 ──
 def upload_image_to_github(img_file) -> str | None:
     """
-    이미지를 GitHub /images/ 폴더에 업로드하고 raw URL을 반환합니다.
+    이미지를 압축 후 GitHub /images/ 폴더에 업로드하고 raw URL을 반환합니다.
     동일 파일명이 존재하면 SHA를 가져와 덮어씁니다.
     반환값: raw URL 문자열 또는 None (실패 시)
     """
-    img_bytes = img_file.read()
-    encoded   = base64.b64encode(img_bytes).decode("utf-8")
-    filename  = img_file.name
+    img_bytes, filename = compress_image(img_file)
+    encoded = base64.b64encode(img_bytes).decode("utf-8")
+
     img_api_url = (
         f"https://api.github.com/repos/{GITHUB_REPO}/contents/images/{filename}"
     )
