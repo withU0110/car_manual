@@ -181,10 +181,27 @@ def upload_image_to_github(img_file) -> str | None:
 def get_summary_raw_url() -> str:
     return f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/summary.png"
 
-# ── 줄바꿈 안전 렌더링 함수 ──
+# ── 서식 렌더링 함수 ──
+# 지원 문법 (JSON 텍스트 내에서 사용):
+#   **텍스트**   → 굵게
+#   *텍스트*     → 기울임
+#   ***텍스트*** → 굵게+기울임
+#   __텍스트__   → 밑줄
+#   !!텍스트!!   → 빨간색 강조
+#   \n           → 줄바꿈
 def render_content(text: str) -> str:
-    escaped = html.escape(text)
-    return escaped.replace("\n", "<br>")
+    import re
+    # 1) HTML 특수문자 이스케이프 (XSS 방지)
+    s = html.escape(text)
+    # 2) 순서 중요: 긴 패턴부터 먼저 처리
+    s = re.sub(r'\*\*\*(.+?)\*\*\*', r'<strong><em>\1</em></strong>', s)
+    s = re.sub(r'\*\*(.+?)\*\*',     r'<strong>\1</strong>', s)
+    s = re.sub(r'\*(.+?)\*',         r'<em>\1</em>', s)
+    s = re.sub(r'__(.+?)__',         r'<u>\1</u>', s)
+    s = re.sub(r'!!(.+?)!!',         r'<span style="color:#d32f2f;font-weight:bold;">\1</span>', s)
+    # 3) 줄바꿈
+    s = s.replace('\n', '<br>')
+    return s
 
 # ── content 값 파싱 헬퍼 ──
 # data.json 항목은 기존(문자열) 또는 신규(dict: {text, images}) 두 가지 형태를 모두 지원
