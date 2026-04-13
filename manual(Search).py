@@ -42,6 +42,17 @@ st.markdown("""
         color: #2E7D32 !important;
         height: 72px !important;
     }
+    .back-btn div.stButton > button {
+        height: 44px !important;
+        font-size: 20px !important;
+        border: 2px solid #1565C0 !important;
+        color: #1565C0 !important;
+        border-radius: 12px !important;
+        background: #ffffff !important;
+        box-shadow: 1px 1px 4px rgba(0,0,0,0.1) !important;
+        margin-bottom: 6px !important;
+        width: 100% !important;
+    }
     .detail-card-content {
         padding: 15px;
         background-color: #f8f9fa;
@@ -463,14 +474,14 @@ else:
     elif st.session_state.page == 'detail':
         main_cat = st.session_state.selected_main
 
-        # ── 뒤로가기 버튼 + 현재 계통명 ──
-        col_back, col_title = st.columns([1, 8])
-        with col_back:
-            if st.button("◀", help="메인으로 돌아가기"):
-                st.session_state.page = 'main'
-                st.rerun()
-        with col_title:
-            st.subheader(f"📍 {main_cat}")
+        # ── 뒤로가기 버튼 ──
+        st.markdown('<div class="back-btn">', unsafe_allow_html=True)
+        if st.button("◀  뒤로가기", key="back_btn"):
+            st.session_state.page = 'main'
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        st.subheader(f"📍 {main_cat}")
 
         for sub, content in details[main_cat].items():
             with st.expander(f"🔎 {sub}", expanded=False):
