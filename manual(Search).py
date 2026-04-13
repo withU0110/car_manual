@@ -445,7 +445,13 @@ search_query = st.text_input(
     label_visibility="collapsed"
 )
 
-# ── 검색어 있으면 페이지 관계없이 전체 검색 결과 표시 ──
+# ── query_params 뒤로가기 감지 (detail 페이지 HTML 버튼) ──
+if st.query_params.get("_back"):
+    st.query_params.clear()
+    st.session_state.page = 'main'
+    st.rerun()
+
+# ── 검색어 있으면 페이지 무관 전체 검색 ──
 if search_query:
     found = False
     for cat, items in details.items():
@@ -460,29 +466,26 @@ if search_query:
     if not found:
         st.info("검색 결과가 없습니다.")
 
-# ── 검색어 없을 때만 페이지 로직 ──
-else:
-    if st.session_state.page == 'main':
-        for cat in DB_KEYS:
-            if cat == "__meta__":
-                continue
-            if st.button(cat, use_container_width=True):
-                st.session_state.selected_main = cat
-                st.session_state.page = 'detail'
-                st.rerun()
-
-    elif st.session_state.page == 'detail':
-        main_cat = st.session_state.selected_main
-
-        # ── 뒤로가기 버튼 ──
-        st.markdown('<div class="back-btn">', unsafe_allow_html=True)
-        if st.button("◀  뒤로가기", key="back_btn"):
-            st.session_state.page = 'main'
+elif st.session_state.page == 'main':
+    for cat in DB_KEYS:
+        if cat == "__meta__":
+            continue
+        if st.button(cat, use_container_width=True):
+            st.session_state.selected_main = cat
+            st.session_state.page = 'detail'
             st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
 
-        st.subheader(f"📍 {main_cat}")
+elif st.session_state.page == 'detail':
+    main_cat = st.session_state.selected_main
+    back_html = (
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">'
+        '<a href="?_back=1" style="font-size:26px;color:#1565C0;text-decoration:none;'
+        'line-height:1;font-weight:bold;">&#9664;</a>'
+        f'<span style="font-size:20px;font-weight:bold;">&#128205; {main_cat}</span>'
+        '</div>'
+    )
+    st.markdown(back_html, unsafe_allow_html=True)
 
-        for sub, content in details[main_cat].items():
-            with st.expander(f"🔎 {sub}", expanded=False):
-                render_item_card(content)
+    for sub, content in details[main_cat].items():
+        with st.expander(f"🔎 {sub}", expanded=False):
+            render_item_card(content)
