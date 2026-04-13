@@ -1,7 +1,7 @@
 {
   "구동계통": {
     "안내륜/안정륜": {
-      "text": "안내륜/안정륜의 점검 내용입니다.\n타이어 마모를 점검하세요.",
+      "text": "**증상**\n베어링유격, 소음, 발열발생\n**확인사항**\n유격확인\n**조치방법**\n제작사(금천시쓰템) 수선의뢰",
       "images": [
         "https://raw.githubusercontent.com/withU0110/car_manual/main/images/IMG_6497.jpeg"
       ]
