@@ -206,18 +206,25 @@ def get_summary_raw_url() -> str:
 #   ***텍스트*** → 굵게+기울임
 #   __텍스트__   → 밑줄
 #   !!텍스트!!   → 빨간색 강조
+#   ##텍스트##   → 크게 (22px)
+#   ^^^텍스트^^^ → 매우 크게 (28px)
+#   ~~텍스트~~   → 작게 (12px)
 #   \n           → 줄바꿈
 def render_content(text: str) -> str:
     import re
     # 1) HTML 특수문자 이스케이프 (XSS 방지)
     s = html.escape(text)
-    # 2) 순서 중요: 긴 패턴부터 먼저 처리
+    # 2) 글자 크기 (긴 패턴 우선)
+    s = re.sub(r'\^\^\^(.+?)\^\^\^', r'<span style="font-size:28px;font-weight:bold;">\1</span>', s)
+    s = re.sub(r'##(.+?)##',         r'<span style="font-size:22px;font-weight:bold;">\1</span>', s)
+    s = re.sub(r'~~(.+?)~~',         r'<span style="font-size:12px;">\1</span>', s)
+    # 3) 굵기/기울임/밑줄/강조 (긴 패턴 우선)
     s = re.sub(r'\*\*\*(.+?)\*\*\*', r'<strong><em>\1</em></strong>', s)
     s = re.sub(r'\*\*(.+?)\*\*',     r'<strong>\1</strong>', s)
     s = re.sub(r'\*(.+?)\*',         r'<em>\1</em>', s)
     s = re.sub(r'__(.+?)__',         r'<u>\1</u>', s)
     s = re.sub(r'!!(.+?)!!',         r'<span style="color:#d32f2f;font-weight:bold;">\1</span>', s)
-    # 3) 줄바꿈
+    # 4) 줄바꿈
     s = s.replace('\n', '<br>')
     return s
 
