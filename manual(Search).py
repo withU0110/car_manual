@@ -160,4 +160,185 @@ FORMATS = [
     (r'(?m)^## (.+)$',  r'<span style="font-size:30px !important;font-weight:bold;color:#FFD966">\1</span>'),
     (r'(?m)^# (.+)$',   r'<span style="font-size:34px !important;font-weight:bold;color:#FFD966">\1</span>'),
     (r'\^\^\^(.+?)\^\^\^', r'<span style="font-size:34px !important;font-weight:bold;color:#FFD966">\1</span>'),
-    (r'##(.+?)##',          r'<span style="font-size:28px !important;font-weight:bold;color:#FFD9
+    (r'##(.+?)##',          r'<span style="font-size:28px !important;font-weight:bold;color:#FFD966">\1</span>'),
+    (r'~~(.+?)~~',          r'<span style="font-size:16px !important;color:#AAA">\1</span>'),
+    (r'\*\*\*(.+?)\*\*\*',  r'<strong><em>\1</em></strong>'),
+    (r'\*\*(.+?)\*\*',      r'<strong>\1</strong>'),
+    (r'\*(.+?)\*',          r'<em>\1</em>'),
+    (r'__(.+?)__',          r'<u>\1</u>'),
+    (r'!!(.+?)!!',          r'<span style="color:#FF6B6B !important;font-weight:bold">\1</span>'),
+]
+
+def render_content(text: str) -> str:
+    s = html.escape(text)
+    for pat, rep in FORMATS: s = re.sub(pat, rep, s)
+    return s.replace('\n', '<br>')
+
+def clean_key(key: str) -> str:
+    s = re.sub(r'\^\^\^(.+?)\^\^\^', r'\1', key)
+    s = re.sub(r'##(.+?)##', r'\1', s)
+    s = re.sub(r'^#+\s*', '', s)
+    return s.strip()
+
+def parse_content(content) -> tuple[str, list]:
+    if isinstance(content, dict):
+        return content.get("text", ""), content.get("images", [])
+    return content, []
+
+def render_card(content):
+    text, images = parse_content(content)
+    st.markdown(f'<div class="detail-card-content">{render_content(text)}</div>',
+                unsafe_allow_html=True)
+    for url in images: st.image(url, use_container_width=True)
+
+def go_to_main():
+    st.session_state.page = 'main'
+    st.session_state.search_query = ""
+
+# ════════════════════════════════════════
+#  데이터 & 세션 초기화
+# ════════════════════════════════════════
+details = load_data()
+DB_KEYS = list(details.keys())
+
+ss = st.session_state
+for k, v in [("page","main"), ("deleted_img_indices",set()), ("admin_last_key",""), ("search_query", "")]:
+    if k not in ss: ss[k] = v
+
+# ════════════════════════════════════════
+#  비밀번호
+# ════════════════════════════════════════
+DEFAULT_PW = "7895"
+
+def get_pw() -> str:
+    return details.get("__meta__", {}).get("password", DEFAULT_PW)
+
+def save_pw(new_pw: str) -> bool:
+    details.setdefault("__meta__", {})["password"] = new_pw
+    return save_data(details)
+
+# ════════════════════════════════════════
+#  다이얼로그
+# ════════════════════════════════════════
+@st.dialog("🔐 관리자 모드")
+def admin_dialog():
+    pw = st.text_input("비밀번호", type="password")
+    if pw and pw != get_pw(): st.error("비밀번호가 틀렸습니다."); return
+    if not pw: return
+
+    tab_edit, tab_pw = st.tabs(["📝 내용 편집", "🔑 비밀번호 변경"])
+
+    with tab_edit:
+        edit_keys   = [k for k in DB_KEYS if k != "__meta__"]
+        label_map   = {clean_key(k): k for k in edit_keys}
+        t_main      = label_map[st.selectbox("계통", list(label_map), key="admin_main")]
+        t_sub       = st.selectbox("항목", list(details[t_main]), key="admin_sub")
+        cur_key     = f"{t_main}::{t_sub}"
+
+        if ss.admin_last_key != cur_key:
+            ss.deleted_img_indices = set()
+            ss.admin_last_key = cur_key
+
+        cur_text, cur_imgs = parse_content(details[t_main][t_sub])
+        new_text = st.text_area("내용 수정", value=cur_text, height=200,
+                                key=f"ta__{cur_key}")
+
+        st.markdown("**📎 현재 첨부 이미지**")
+        for idx, url in enumerate(cur_imgs):
+            deleted = idx in ss.deleted_img_indices
+            c1, c2 = st.columns([5, 1])
+            with c1:
+                if deleted: st.markdown(f"<s style='color:#888;font-size:12px'>{url.split('/')[-1]} (삭제 예정)</s>", unsafe_allow_html=True)
+                else: st.image(url, use_container_width=True)
+            with c2:
+                if deleted:
+                    if st.button("↩️", key=f"restore_{idx}"): ss.deleted_img_indices.discard(idx)
+                else:
+                    if st.button("🗑️", key=f"del_{idx}"): ss.deleted_img_indices.add(idx)
+        if not cur_imgs: st.caption("첨부된 이미지가 없습니다.")
+
+        st.markdown("**➕ 이미지 추가 업로드**")
+        new_imgs = st.file_uploader("이미지 선택 (png/jpg/jpeg)", type=["png","jpg","jpeg"],
+                                    accept_multiple_files=True, key=f"uploader__{cur_key}")
+
+        if st.button("💾 저장 (GitHub 반영)", key="btn_save"):
+            kept = [u for i, u in enumerate(cur_imgs) if i not in ss.deleted_img_indices]
+            uploaded = []
+            if new_imgs:
+                with st.spinner("이미지 업로드 중..."):
+                    uploaded = [u for f in new_imgs if (u := upload_image(f))]
+            all_imgs = kept + uploaded
+            details[t_main][t_sub] = {"text": new_text, "images": all_imgs} if all_imgs else new_text
+            if save_data(details):
+                ss.deleted_img_indices = set()
+                st.success("저장 완료!")
+
+    with tab_pw:
+        st.markdown("현재 비밀번호로 인증된 상태입니다.")
+        p1 = st.text_input("새 비밀번호", type="password", key="new_pw1")
+        p2 = st.text_input("새 비밀번호 확인", type="password", key="new_pw2")
+        if st.button("🔒 비밀번호 변경", key="btn_change_pw"):
+            if not p1:              st.error("새 비밀번호를 입력해 주세요.")
+            elif p1 != p2:          st.error("비밀번호가 일치하지 않습니다.")
+            elif p1 == get_pw():    st.warning("현재 비밀번호와 동일합니다.")
+            elif save_pw(p1):       st.success("변경 완료. 다음 로그인부터 적용됩니다.")
+
+@st.dialog("📋 전체 요약도")
+def summary_dialog():
+    res = requests.get(f"{RAW_BASE}/summary.png")
+    if res.status_code == 200:
+        img_bytes = res.content
+    elif os.path.exists("summary.png"):
+        img_bytes = open("summary.png", "rb").read()
+    else:
+        st.error("summary.png를 찾을 수 없습니다.")
+        st.info("GitHub 저장소 루트에 summary.png를 업로드해 주세요."); return
+    st.image(img_bytes, use_container_width=True)
+    st.download_button("⬇️ 이미지 다운로드", img_bytes, "summary.png", "image/png",
+                       use_container_width=True)
+
+# ════════════════════════════════════════
+#  화면 렌더링
+# ════════════════════════════════════════
+st.markdown("<p class='header-title'>⚡ 설비 유지보수 시스템</p>", unsafe_allow_html=True)
+
+st.markdown('<div class="menu-section">', unsafe_allow_html=True)
+if st.button("🏠 메인", use_container_width=True, on_click=go_to_main): pass
+if st.button("📋 요약도", use_container_width=True): summary_dialog()
+if st.button("⚙️ 설정", use_container_width=True):   admin_dialog()
+st.markdown('</div>', unsafe_allow_html=True)
+
+st.divider()
+
+query = st.text_input("🔍 문제점 검색", placeholder="단어 입력", label_visibility="collapsed", key="search_query")
+
+if query:
+    found = False
+    for cat, items in details.items():
+        if cat == "__meta__": continue
+        for sub, content in items.items():
+            text, _ = parse_content(content)
+            if query in text or query in sub:
+                found = True
+                with st.expander(f"✅ {clean_key(cat)} > {sub}", expanded=True):
+                    render_card(content)
+    if not found: st.info("검색 결과가 없습니다.")
+
+elif ss.page == 'main':
+    # 메인 카테고리 버튼들을 감싸는 전용 구역 추가 (다이얼로그 버튼과 분리)
+    st.markdown('<div class="category-section">', unsafe_allow_html=True)
+    for cat in DB_KEYS:
+        if cat == "__meta__": continue
+        if st.button(clean_key(cat), use_container_width=True):
+            ss.selected_main = cat; ss.page = 'detail'; st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+
+elif ss.page == 'detail':
+    cat = ss.selected_main
+    st.markdown('<div class="back-btn">', unsafe_allow_html=True)
+    if st.button("◀  뒤로가기", key="back_btn", on_click=go_to_main): pass
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    st.markdown(f"<div class='cat-header'>📍 {clean_key(cat)}</div>", unsafe_allow_html=True)
+    for sub, content in details[cat].items():
+        with st.expander(f"🔎 {sub}", expanded=False): render_card(content)
