@@ -14,7 +14,7 @@ st.markdown("""<style>
 .block-container{padding:4rem 1rem 1rem !important;background:#333}
 .header-title{font-size:22px;font-weight:bold;color:#FFD966;text-align:center;
   margin-top:20px;margin-bottom:10px;letter-spacing:1px;text-shadow:0 1px 3px rgba(0,0,0,.5)}
-div.stButton>button{width:100%;height:68px;font-size:17px!important;font-weight:bold;
+div.stButton>button{width:100%;height:68px;font-size:28px!important;font-weight:bold;
   border-radius:12px;background:#444!important;border:1px solid #555!important;
   color:#E8E8E8!important;box-shadow:2px 2px 8px rgba(0,0,0,.4);margin-bottom:8px;transition:.2s}
 div.stButton>button:hover{background:#505050!important;border-color:#FFD966!important;color:#FFD966!important}
@@ -31,7 +31,7 @@ div.stButton>button:hover{background:#505050!important;border-color:#FFD966!impo
   white-space:pre-wrap;word-break:keep-all;font-size:15px;line-height:1.85;color:#E8E8E8}
 [data-testid="stExpander"]{background:#3A3A3A!important;border:1px solid #4A4A4A!important;
   border-radius:10px!important;margin-bottom:6px}
-[data-testid="stExpander"] summary{color:#E8E8E8!important;font-weight:bold;font-size:15px}
+[data-testid="stExpander"] summary{color:#E8E8E8!important;font-weight:bold;font-size:20px}
 [data-testid="stExpander"] summary:hover,
 [data-testid="stExpander"] summary:focus,
 [data-testid="stExpander"] summary:active {
@@ -52,7 +52,7 @@ div.stButton>button:hover{background:#505050!important;border-color:#FFD966!impo
 hr{border-color:#4A4A4A!important}
 [data-testid="stNotification"]{border-radius:8px!important}
 .stCaption,[data-testid="stCaptionContainer"]{color:#AAA!important}
-.cat-header{font-size:20px;font-weight:bold;color:#FFD966;margin:6px 0 10px;
+.cat-header{font-size:24px;font-weight:bold;color:#FFD966;margin:6px 0 10px;
   padding-bottom:4px;border-bottom:1px solid #555}
 </style>""", unsafe_allow_html=True)
 
