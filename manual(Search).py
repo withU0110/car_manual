@@ -12,32 +12,36 @@ st.markdown("""<style>
 .stApp,[data-testid="stAppViewContainer"]{background:#333;color:#E8E8E8}
 [data-testid="stHeader"],[data-testid="stSidebar"]{background:#2A2A2A}
 .block-container{padding:4rem 1rem 1rem !important;background:#333}
-.header-title{font-size:22px;font-weight:bold;color:#FFD966;text-align:center;
+.header-title{font-size:26px;font-weight:bold;color:#FFD966;text-align:center;
   margin-top:20px;margin-bottom:10px;letter-spacing:1px;text-shadow:0 1px 3px rgba(0,0,0,.5)}
 
-/* 1. 메인 화면 카테고리 버튼 크기 (28px) 및 높이 조정 */
-div.stButton>button{width:100%;height:80px;font-size:28px!important;font-weight:bold;
+/* 1. 메인 화면 카테고리 버튼 크기 (40px) 및 높이 조정 */
+div.stButton>button{width:100%;height:80px;font-size:40px!important;font-weight:bold;
   border-radius:12px;background:#444!important;border:1px solid #555!important;
   color:#E8E8E8!important;box-shadow:2px 2px 8px rgba(0,0,0,.4);margin-bottom:8px;transition:.2s}
 div.stButton>button:hover{background:#505050!important;border-color:#FFD966!important;color:#FFD966!important}
 
+/* 2. 상단 메뉴(메인/요약도/설정) 크기 (40px) 및 높이 70px로 확보 */
 .menu-section div.stButton>button{border:1.5px solid #FFD966!important;color:#FFD966!important;
-  background:#3A3A3A!important;height:52px!important;font-size:15px!important;border-radius:10px!important}
+  background:#3A3A3A!important;height:70px!important;font-size:40px!important;border-radius:10px!important}
 .menu-section div.stButton>button:hover{background:#FFD966!important;color:#1E1E1E!important}
-.back-btn div.stButton>button{height:36px!important;font-size:14px!important;
+
+/* 뒤로가기 버튼 유지 */
+.back-btn div.stButton>button{height:45px!important;font-size:20px!important;
   border:1px solid #7CB9E8!important;color:#7CB9E8!important;border-radius:8px!important;
   background:#3A3A3A!important;box-shadow:none!important;margin-bottom:8px!important;
-  width:auto!important;padding:0 16px!important}
+  width:auto!important;padding:0 20px!important}
 .back-btn div.stButton>button:hover{background:#7CB9E8!important;color:#1E1E1E!important}
 
+/* 상세 내용 카드 내용 폰트 크기 확대 (15px -> 20px) */
 .detail-card-content{padding:16px 18px;background:#3E3E3E;border-radius:10px;
   border-left:5px solid #FFD966;font-family:'Nanum Gothic','Malgun Gothic',sans-serif;
-  white-space:pre-wrap;word-break:keep-all;font-size:15px;line-height:1.85;color:#E8E8E8}
+  white-space:pre-wrap;word-break:keep-all;font-size:20px;line-height:1.85;color:#E8E8E8}
 
-/* 2. 세부 항목 제목 크기 (20px) */
+/* 3. 세부 항목(안내륜/안정륜) 제목 크기 (40px) */
 [data-testid="stExpander"]{background:#3A3A3A!important;border:1px solid #4A4A4A!important;
   border-radius:10px!important;margin-bottom:6px}
-[data-testid="stExpander"] summary{color:#E8E8E8!important;font-weight:bold;font-size:20px!important}
+[data-testid="stExpander"] summary{color:#E8E8E8!important;font-weight:bold;font-size:40px!important; padding:15px!}
 [data-testid="stExpander"] summary:hover,
 [data-testid="stExpander"] summary:focus,
 [data-testid="stExpander"] summary:active {
@@ -47,21 +51,22 @@ div.stButton>button:hover{background:#505050!important;border-color:#FFD966!impo
 [data-testid="stExpander"] summary:focus p,
 [data-testid="stExpander"] summary:active p { color:#E8E8E8 !important; }
 
+/* 기타 UI 설정 */
 [data-testid="stTextInput"] input,[data-testid="stTextArea"] textarea,
 [data-testid="stSelectbox"] div[data-baseweb="select"]{background:#444!important;
-  color:#E8E8E8!important;border:1px solid #555!important;border-radius:8px!important}
+  color:#E8E8E8!important;border:1px solid #555!important;border-radius:8px!important;font-size:20px!important}
 [data-testid="stTextInput"] input::placeholder{color:#999!important}
 [data-testid="stTextInput"] label,[data-testid="stTextArea"] label,
-[data-testid="stSelectbox"] label{color:#BBB!important;font-size:14px!important}
-[data-testid="stTabs"] [role="tab"]{color:#BBB!important;font-size:14px}
+[data-testid="stSelectbox"] label{color:#BBB!important;font-size:18px!important}
+[data-testid="stTabs"] [role="tab"]{color:#BBB!important;font-size:18px}
 [data-testid="stTabs"] [role="tab"][aria-selected="true"]{color:#FFD966!important;border-bottom:2px solid #FFD966!important}
 hr{border-color:#4A4A4A!important}
 [data-testid="stNotification"]{border-radius:8px!important}
 .stCaption,[data-testid="stCaptionContainer"]{color:#AAA!important}
 
-/* 3. 상세 화면 상단 카테고리 제목 (24px) */
-.cat-header{font-size:24px;font-weight:bold;color:#FFD966;margin:6px 0 10px;
-  padding-bottom:4px;border-bottom:1px solid #555}
+/* 상세 화면 상단 카테고리 제목 (40px) */
+.cat-header{font-size:40px;font-weight:bold;color:#FFD966;margin:6px 0 15px;
+  padding-bottom:8px;border-bottom:1px solid #555}
 </style>""", unsafe_allow_html=True)
 
 # ════════════════════════════════════════
@@ -124,15 +129,12 @@ def upload_image(img_file) -> str | None:
 #  헬퍼 함수 & 콜백 함수
 # ════════════════════════════════════════
 FORMATS = [
-    # 마크다운 헤더 방식 (앞에만 기호 작성 후 띄어쓰기)
-    (r'(?m)^### (.+)$', r'<span style="font-size:20px !important;font-weight:bold;color:#FFD966">\1</span>'),
-    (r'(?m)^## (.+)$',  r'<span style="font-size:24px !important;font-weight:bold;color:#FFD966">\1</span>'),
-    (r'(?m)^# (.+)$',   r'<span style="font-size:28px !important;font-weight:bold;color:#FFD966">\1</span>'),
-    
-    # 단어 양옆 감싸기 방식
-    (r'\^\^\^(.+?)\^\^\^', r'<span style="font-size:28px !important;font-weight:bold;color:#FFD966">\1</span>'),
-    (r'##(.+?)##',          r'<span style="font-size:22px !important;font-weight:bold;color:#FFD966">\1</span>'),
-    (r'~~(.+?)~~',          r'<span style="font-size:12px !important;color:#AAA">\1</span>'),
+    (r'(?m)^### (.+)$', r'<span style="font-size:26px !important;font-weight:bold;color:#FFD966">\1</span>'),
+    (r'(?m)^## (.+)$',  r'<span style="font-size:30px !important;font-weight:bold;color:#FFD966">\1</span>'),
+    (r'(?m)^# (.+)$',   r'<span style="font-size:34px !important;font-weight:bold;color:#FFD966">\1</span>'),
+    (r'\^\^\^(.+?)\^\^\^', r'<span style="font-size:34px !important;font-weight:bold;color:#FFD966">\1</span>'),
+    (r'##(.+?)##',          r'<span style="font-size:28px !important;font-weight:bold;color:#FFD966">\1</span>'),
+    (r'~~(.+?)~~',          r'<span style="font-size:16px !important;color:#AAA">\1</span>'),
     (r'\*\*\*(.+?)\*\*\*',  r'<strong><em>\1</em></strong>'),
     (r'\*\*(.+?)\*\*',      r'<strong>\1</strong>'),
     (r'\*(.+?)\*',          r'<em>\1</em>'),
@@ -146,7 +148,6 @@ def render_content(text: str) -> str:
     return s.replace('\n', '<br>')
 
 def clean_key(key: str) -> str:
-    # 카테고리명에 기호가 들어가더라도 화면에 보일 땐 기호가 지워지도록 필터링
     s = re.sub(r'\^\^\^(.+?)\^\^\^', r'\1', key)
     s = re.sub(r'##(.+?)##', r'\1', s)
     s = re.sub(r'^#+\s*', '', s)
@@ -163,7 +164,6 @@ def render_card(content):
                 unsafe_allow_html=True)
     for url in images: st.image(url, use_container_width=True)
 
-# 메인 화면으로 돌아가면서 검색창을 초기화하는 콜백 함수
 def go_to_main():
     st.session_state.page = 'main'
     st.session_state.search_query = ""
