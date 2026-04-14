@@ -4,74 +4,177 @@ import json
 import base64
 import requests
 import html
+import re
 from io import BytesIO
 from PIL import Image
 
 # ── 페이지 설정 ──
 st.set_page_config(page_title="설비 관리 시스템", layout="wide")
 
-# ── CSS ──
+# ── CSS (다크 테마 #333333) ──
 st.markdown("""
     <style>
+    /* ── 전체 배경 및 기본 폰트 ── */
+    .stApp, [data-testid="stAppViewContainer"] {
+        background-color: #333333 !important;
+        color: #E8E8E8 !important;
+    }
+    [data-testid="stHeader"] {
+        background-color: #2A2A2A !important;
+    }
+    [data-testid="stSidebar"] {
+        background-color: #2A2A2A !important;
+    }
+    /* 메인 컨텐츠 영역 */
     .block-container {
-        padding-top: 4rem !important;
+        padding-top: 2.5rem !important;
         padding-left: 1rem !important;
         padding-right: 1rem !important;
+        background-color: #333333 !important;
     }
+
+    /* ── 헤더 타이틀 ── */
     .header-title {
-        font-size: 24px !important;
+        font-size: 22px !important;
         font-weight: bold;
-        color: #1E1E1E;
+        color: #FFD966;
         text-align: center;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
+        letter-spacing: 1px;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.5);
     }
+
+    /* ── 메인 버튼 (계통 선택) ── */
     div.stButton > button {
         width: 100%;
-        height: 72px;
-        font-size: 18px !important;
+        height: 68px;
+        font-size: 17px !important;
         font-weight: bold;
-        border-radius: 15px;
-        background: #ffffff;
-        border: 1px solid #ddd;
-        box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
-        margin-bottom: 10px;
-        transition: 0.2s;
+        border-radius: 12px;
+        background: #444444 !important;
+        border: 1px solid #555555 !important;
+        color: #E8E8E8 !important;
+        box-shadow: 2px 2px 8px rgba(0,0,0,0.4);
+        margin-bottom: 8px;
+        transition: background 0.2s, border 0.2s;
     }
+    div.stButton > button:hover {
+        background: #505050 !important;
+        border: 1px solid #FFD966 !important;
+        color: #FFD966 !important;
+    }
+
+    /* ── 메뉴 섹션 버튼 (메인/요약도/설정) ── */
     .menu-section div.stButton > button {
-        border: 2px solid #2E7D32 !important;
-        color: #2E7D32 !important;
-        height: 72px !important;
+        border: 1.5px solid #FFD966 !important;
+        color: #FFD966 !important;
+        background: #3A3A3A !important;
+        height: 52px !important;
+        font-size: 15px !important;
+        border-radius: 10px !important;
     }
-    /* 뒤로가기 버튼: key="back_btn" */
-    div[data-testid="stButton"]:has(button[kind="secondary"]#back_btn) > button,
-    button[data-testid="baseButton-secondary"]:has(+ *) {
-        height: 36px !important;
+    .menu-section div.stButton > button:hover {
+        background: #FFD966 !important;
+        color: #1E1E1E !important;
     }
-    /* 전역 back_btn 스타일: aria-label 불가 → 첫번째 버튼 방식 대신 클래스 활용 */
+
+    /* ── 뒤로가기 버튼 ── */
     .back-btn div.stButton > button {
         height: 36px !important;
-        font-size: 15px !important;
-        border: 1px solid #1565C0 !important;
-        color: #1565C0 !important;
+        font-size: 14px !important;
+        border: 1px solid #7CB9E8 !important;
+        color: #7CB9E8 !important;
         border-radius: 8px !important;
-        background: #ffffff !important;
+        background: #3A3A3A !important;
         box-shadow: none !important;
         margin-bottom: 8px !important;
         width: auto !important;
         padding: 0 16px !important;
     }
+    .back-btn div.stButton > button:hover {
+        background: #7CB9E8 !important;
+        color: #1E1E1E !important;
+    }
+
+    /* ── 상세 카드 ── */
     .detail-card-content {
-        padding: 15px;
-        background-color: #f8f9fa;
+        padding: 16px 18px;
+        background-color: #3E3E3E;
         border-radius: 10px;
-        border-left: 5px solid #4CAF50;
-        font-family: inherit;
+        border-left: 5px solid #FFD966;
+        font-family: 'Nanum Gothic', 'Malgun Gothic', sans-serif;
         white-space: pre-wrap;
         word-wrap: break-word;
         word-break: keep-all;
         margin: 0;
         font-size: 15px;
-        line-height: 1.7;
+        line-height: 1.85;
+        color: #E8E8E8;
+    }
+
+    /* ── Expander ── */
+    [data-testid="stExpander"] {
+        background-color: #3A3A3A !important;
+        border: 1px solid #4A4A4A !important;
+        border-radius: 10px !important;
+        margin-bottom: 6px;
+    }
+    [data-testid="stExpander"] summary {
+        color: #E8E8E8 !important;
+        font-weight: bold;
+        font-size: 15px;
+    }
+
+    /* ── 텍스트 입력/검색창 ── */
+    [data-testid="stTextInput"] input,
+    [data-testid="stTextArea"] textarea,
+    [data-testid="stSelectbox"] div[data-baseweb="select"] {
+        background-color: #444444 !important;
+        color: #E8E8E8 !important;
+        border: 1px solid #555555 !important;
+        border-radius: 8px !important;
+    }
+    [data-testid="stTextInput"] input::placeholder {
+        color: #999999 !important;
+    }
+    [data-testid="stTextInput"] label,
+    [data-testid="stTextArea"] label,
+    [data-testid="stSelectbox"] label {
+        color: #BBBBBB !important;
+        font-size: 14px !important;
+    }
+
+    /* ── 탭 ── */
+    [data-testid="stTabs"] [role="tab"] {
+        color: #BBBBBB !important;
+        font-size: 14px;
+    }
+    [data-testid="stTabs"] [role="tab"][aria-selected="true"] {
+        color: #FFD966 !important;
+        border-bottom: 2px solid #FFD966 !important;
+    }
+
+    /* ── Divider ── */
+    hr {
+        border-color: #4A4A4A !important;
+    }
+
+    /* ── st.info / st.error / st.success / st.caption ── */
+    [data-testid="stNotification"] {
+        border-radius: 8px !important;
+    }
+    .stCaption, [data-testid="stCaptionContainer"] {
+        color: #AAAAAA !important;
+    }
+
+    /* ── 카테고리 헤더 ── */
+    .cat-header {
+        font-size: 20px;
+        font-weight: bold;
+        color: #FFD966;
+        margin: 6px 0 10px 0;
+        padding-bottom: 4px;
+        border-bottom: 1px solid #555555;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -125,72 +228,42 @@ def save_data_to_github(data: dict):
 
 # ── 이미지 리사이즈 + 압축 (모바일 최적화) ──
 def compress_image(img_file, max_px: int = 1200, quality: int = 85) -> tuple[bytes, str]:
-    """
-    업로드된 이미지를 리사이즈·압축하여 bytes로 반환합니다.
-    - max_px  : 가로/세로 중 긴 변의 최대 픽셀 (기본 1200px ≈ 150dpi @ 8인치)
-    - quality : JPEG 압축 품질 0~95 (기본 85)
-    반환값: (압축된 bytes, 저장 파일명(확장자 .jpg로 통일))
-    """
     img = Image.open(img_file)
-
-    # EXIF 회전 보정
     try:
         from PIL import ImageOps
         img = ImageOps.exif_transpose(img)
     except Exception:
         pass
-
-    # RGBA / P 모드 → RGB 변환 (JPEG 저장 위해 필요)
     if img.mode in ("RGBA", "P"):
         img = img.convert("RGB")
-
-    # 긴 변 기준 리사이즈
     w, h = img.size
     if max(w, h) > max_px:
         ratio = max_px / max(w, h)
         img = img.resize((int(w * ratio), int(h * ratio)), Image.LANCZOS)
-
-    # JPEG로 압축
     buf = BytesIO()
     img.save(buf, format="JPEG", quality=quality, optimize=True)
     buf.seek(0)
-
-    # 파일명 확장자를 .jpg로 통일
     stem = os.path.splitext(img_file.name)[0]
     return buf.read(), f"{stem}.jpg"
 
 # ── GitHub에 이미지 업로드하기 ──
 def upload_image_to_github(img_file) -> str | None:
-    """
-    이미지를 압축 후 GitHub /images/ 폴더에 업로드하고 raw URL을 반환합니다.
-    동일 파일명이 존재하면 SHA를 가져와 덮어씁니다.
-    반환값: raw URL 문자열 또는 None (실패 시)
-    """
     img_bytes, filename = compress_image(img_file)
     encoded = base64.b64encode(img_bytes).decode("utf-8")
-
     img_api_url = (
         f"https://api.github.com/repos/{GITHUB_REPO}/contents/images/{filename}"
     )
-
-    # 기존 파일 SHA 확인 (덮어쓰기용)
     check = requests.get(img_api_url, headers=HEADERS)
     sha   = check.json().get("sha") if check.status_code == 200 else None
-
     payload = {
         "message": f"Upload image: {filename}",
         "content": encoded,
     }
     if sha:
         payload["sha"] = sha
-
     res = requests.put(img_api_url, headers=HEADERS, json=payload)
-
     if res.status_code in (200, 201):
-        raw_url = (
-            f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/images/{filename}"
-        )
-        return raw_url
+        return f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/images/{filename}"
     else:
         st.error(f"이미지 업로드 실패 ({filename}): {res.status_code} {res.text}")
         return None
@@ -200,7 +273,7 @@ def get_summary_raw_url() -> str:
     return f"https://raw.githubusercontent.com/{GITHUB_REPO}/main/summary.png"
 
 # ── 서식 렌더링 함수 ──
-# 지원 문법 (JSON 텍스트 내에서 사용):
+# 지원 문법:
 #   **텍스트**   → 굵게
 #   *텍스트*     → 기울임
 #   ***텍스트*** → 굵게+기울임
@@ -211,30 +284,28 @@ def get_summary_raw_url() -> str:
 #   ~~텍스트~~   → 작게 (12px)
 #   \n           → 줄바꿈
 def render_content(text: str) -> str:
-    import re
-    # 1) HTML 특수문자 이스케이프 (XSS 방지)
     s = html.escape(text)
-    # 2) 글자 크기 (긴 패턴 우선)
-    s = re.sub(r'\^\^\^(.+?)\^\^\^', r'<span style="font-size:28px;font-weight:bold;">\1</span>', s)
-    s = re.sub(r'##(.+?)##',         r'<span style="font-size:22px;font-weight:bold;">\1</span>', s)
-    s = re.sub(r'~~(.+?)~~',         r'<span style="font-size:12px;">\1</span>', s)
-    # 3) 굵기/기울임/밑줄/강조 (긴 패턴 우선)
+    s = re.sub(r'\^\^\^(.+?)\^\^\^', r'<span style="font-size:28px;font-weight:bold;color:#FFD966;">\1</span>', s)
+    s = re.sub(r'##(.+?)##',         r'<span style="font-size:22px;font-weight:bold;color:#FFD966;">\1</span>', s)
+    s = re.sub(r'~~(.+?)~~',         r'<span style="font-size:12px;color:#AAAAAA;">\1</span>', s)
     s = re.sub(r'\*\*\*(.+?)\*\*\*', r'<strong><em>\1</em></strong>', s)
     s = re.sub(r'\*\*(.+?)\*\*',     r'<strong>\1</strong>', s)
     s = re.sub(r'\*(.+?)\*',         r'<em>\1</em>', s)
     s = re.sub(r'__(.+?)__',         r'<u>\1</u>', s)
-    s = re.sub(r'!!(.+?)!!',         r'<span style="color:#d32f2f;font-weight:bold;">\1</span>', s)
-    # 4) 줄바꿈
+    s = re.sub(r'!!(.+?)!!',         r'<span style="color:#FF6B6B;font-weight:bold;">\1</span>', s)
     s = s.replace('\n', '<br>')
     return s
 
+# ── 키 이름에서 ##...## 마커 제거 (버튼 표시용) ──
+def clean_key_name(key: str) -> str:
+    """##텍스트## 형태의 마커를 제거하여 순수 텍스트만 반환"""
+    return re.sub(r'##(.+?)##', r'\1', key).strip()
+
 # ── content 값 파싱 헬퍼 ──
-# data.json 항목은 기존(문자열) 또는 신규(dict: {text, images}) 두 가지 형태를 모두 지원
 def parse_content(content) -> tuple[str, list[str]]:
-    """content → (text: str, images: list[str]) 반환"""
     if isinstance(content, dict):
         return content.get("text", ""), content.get("images", [])
-    return content, []  # 기존 문자열 구조 하위 호환
+    return content, []
 
 # ── 데이터 로드 ──
 details = load_data_from_github()
@@ -242,14 +313,12 @@ DB_KEYS = list(details.keys())
 
 if 'page' not in st.session_state:
     st.session_state.page = 'main'
-# 이미지 삭제 상태를 다이얼로그 재렌더링 간에 유지
 if 'deleted_img_indices' not in st.session_state:
     st.session_state.deleted_img_indices = set()
-# 현재 관리자가 보고 있는 계통/항목 추적 (삭제 상태 초기화용)
 if 'admin_last_key' not in st.session_state:
     st.session_state.admin_last_key = ""
 
-# ── 비밀번호 검증 (data.json의 __meta__.password 또는 기본값) ──
+# ── 비밀번호 검증 ──
 DEFAULT_PW = "7895"
 
 def get_stored_password() -> str:
@@ -274,19 +343,24 @@ def admin_dialog():
             st.error("비밀번호가 틀렸습니다.")
         return
 
-    # ── 탭: 내용편집 / 비밀번호변경 ──
     tab_edit, tab_pw = st.tabs(["📝 내용 편집", "🔑 비밀번호 변경"])
 
     # ───────────────────────────────
     # 탭1: 내용 편집 + 이미지 관리
     # ───────────────────────────────
     with tab_edit:
-        # __meta__ 키는 편집 대상에서 제외
         edit_keys = [k for k in DB_KEYS if k != "__meta__"]
-        t_main = st.selectbox("계통", edit_keys, key="admin_main")
+
+        # selectbox에 표시할 라벨(##제거)과 실제 키 매핑
+        key_labels  = [clean_key_name(k) for k in edit_keys]
+        label_to_key = dict(zip(key_labels, edit_keys))
+
+        selected_label = st.selectbox("계통", key_labels, key="admin_main_label")
+        t_main = label_to_key[selected_label]
         t_sub  = st.selectbox("항목", list(details[t_main].keys()), key="admin_sub")
 
-        # 계통/항목이 바뀌면 삭제 상태 초기화
+        # ── 계통/항목이 바뀌면 textarea key를 바꿔 내용 초기화 ──
+        # [BUG FIX] key를 선택된 계통+항목 기반으로 동적 생성
         current_key = f"{t_main}::{t_sub}"
         if st.session_state.admin_last_key != current_key:
             st.session_state.deleted_img_indices = set()
@@ -296,16 +370,16 @@ def admin_dialog():
         current_content = details[t_main][t_sub]
         current_text, current_images = parse_content(current_content)
 
-        # ── 텍스트 수정 ──
+        # ── 텍스트 수정 (key에 current_key 포함 → 항목 변경 시 위젯 재생성) ──
+        textarea_key = f"admin_textarea__{current_key}"
         new_text = st.text_area(
             "내용 수정 (엔터로 줄바꿈 가능)",
             value=current_text,
             height=200,
-            key="admin_textarea"
+            key=textarea_key
         )
 
         # ── 기존 이미지 목록 표시 및 삭제 ──
-        # rerun 없이 session_state로 삭제 상태 관리
         st.markdown("**📎 현재 첨부 이미지**")
         if current_images:
             for idx, img_url in enumerate(current_images):
@@ -314,7 +388,7 @@ def admin_dialog():
                 with col_img:
                     if is_deleted:
                         st.markdown(
-                            f"<s style='color:gray;font-size:12px'>{img_url.split('/')[-1]} (삭제 예정)</s>",
+                            f"<s style='color:#888888;font-size:12px'>{img_url.split('/')[-1]} (삭제 예정)</s>",
                             unsafe_allow_html=True
                         )
                     else:
@@ -335,12 +409,11 @@ def admin_dialog():
             "이미지 선택 (png / jpg / jpeg)",
             type=["png", "jpg", "jpeg"],
             accept_multiple_files=True,
-            key="img_uploader"
+            key=f"img_uploader__{current_key}"
         )
 
         # ── 저장 버튼 ──
         if st.button("💾 저장 (GitHub 반영)", key="btn_save_content"):
-            # 삭제 표시되지 않은 기존 이미지만 유지
             kept_images = [
                 url for idx, url in enumerate(current_images)
                 if idx not in st.session_state.deleted_img_indices
@@ -363,7 +436,6 @@ def admin_dialog():
 
             ok = save_data_to_github(details)
             if ok:
-                # 저장 완료 후 삭제 상태 초기화
                 st.session_state.deleted_img_indices = set()
                 st.success("저장 완료! GitHub data.json이 업데이트됐습니다.")
 
@@ -390,15 +462,11 @@ def admin_dialog():
 # ── 요약도 팝업 ──
 @st.dialog("📋 전체 요약도")
 def summary_dialog():
-    # GitHub raw URL 로 이미지 로드
     raw_url = get_summary_raw_url()
     res = requests.get(raw_url)
-
     if res.status_code == 200:
         img_bytes = res.content
         st.image(img_bytes, use_container_width=True)
-
-        # ── 다운로드 버튼 ──
         st.download_button(
             label="⬇️ 이미지 다운로드",
             data=img_bytes,
@@ -407,7 +475,6 @@ def summary_dialog():
             use_container_width=True
         )
     else:
-        # fallback: 로컬 파일
         local_path = "summary.png"
         if os.path.exists(local_path):
             with open(local_path, "rb") as f:
@@ -427,12 +494,10 @@ def summary_dialog():
 # ── 항목 상세 카드 렌더링 ──
 def render_item_card(content):
     text, images = parse_content(content)
-    # 텍스트
     st.markdown(
         f'<div class="detail-card-content">{render_content(text)}</div>',
         unsafe_allow_html=True
     )
-    # 첨부 이미지
     if images:
         st.markdown("")
         for img_url in images:
@@ -459,7 +524,7 @@ search_query = st.text_input(
     label_visibility="collapsed"
 )
 
-# ── 검색어 있으면 페이지 무관 전체 검색 ──
+# ── 검색어 있으면 전체 검색 ──
 if search_query:
     found = False
     for cat, items in details.items():
@@ -469,7 +534,7 @@ if search_query:
             text, _ = parse_content(content)
             if search_query in text or search_query in sub:
                 found = True
-                with st.expander(f"✅ {cat} > {sub}", expanded=True):
+                with st.expander(f"✅ {clean_key_name(cat)} > {sub}", expanded=True):
                     render_item_card(content)
     if not found:
         st.info("검색 결과가 없습니다.")
@@ -478,13 +543,16 @@ elif st.session_state.page == 'main':
     for cat in DB_KEYS:
         if cat == "__meta__":
             continue
-        if st.button(cat, use_container_width=True):
+        # [BUG FIX] 버튼 라벨에서 ## 마커 제거
+        display_name = clean_key_name(cat)
+        if st.button(display_name, use_container_width=True):
             st.session_state.selected_main = cat
             st.session_state.page = 'detail'
             st.rerun()
 
 elif st.session_state.page == 'detail':
     main_cat = st.session_state.selected_main
+    display_cat = clean_key_name(main_cat)
 
     st.markdown('<div class="back-btn">', unsafe_allow_html=True)
     if st.button("◀  뒤로가기", key="back_btn"):
@@ -492,7 +560,7 @@ elif st.session_state.page == 'detail':
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown(f"### 📍 {main_cat}")
+    st.markdown(f"<div class='cat-header'>📍 {display_cat}</div>", unsafe_allow_html=True)
 
     for sub, content in details[main_cat].items():
         with st.expander(f"🔎 {sub}", expanded=False):
