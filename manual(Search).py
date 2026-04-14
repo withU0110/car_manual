@@ -14,10 +14,13 @@ st.markdown("""<style>
 .block-container{padding:4rem 1rem 1rem !important;background:#333}
 .header-title{font-size:22px;font-weight:bold;color:#FFD966;text-align:center;
   margin-top:20px;margin-bottom:10px;letter-spacing:1px;text-shadow:0 1px 3px rgba(0,0,0,.5)}
-div.stButton>button{width:100%;height:68px;font-size:28px!important;font-weight:bold;
+
+/* 1. 메인 화면 카테고리 버튼 크기 (28px) 및 높이 조정 */
+div.stButton>button{width:100%;height:80px;font-size:28px!important;font-weight:bold;
   border-radius:12px;background:#444!important;border:1px solid #555!important;
   color:#E8E8E8!important;box-shadow:2px 2px 8px rgba(0,0,0,.4);margin-bottom:8px;transition:.2s}
 div.stButton>button:hover{background:#505050!important;border-color:#FFD966!important;color:#FFD966!important}
+
 .menu-section div.stButton>button{border:1.5px solid #FFD966!important;color:#FFD966!important;
   background:#3A3A3A!important;height:52px!important;font-size:15px!important;border-radius:10px!important}
 .menu-section div.stButton>button:hover{background:#FFD966!important;color:#1E1E1E!important}
@@ -26,12 +29,15 @@ div.stButton>button:hover{background:#505050!important;border-color:#FFD966!impo
   background:#3A3A3A!important;box-shadow:none!important;margin-bottom:8px!important;
   width:auto!important;padding:0 16px!important}
 .back-btn div.stButton>button:hover{background:#7CB9E8!important;color:#1E1E1E!important}
+
 .detail-card-content{padding:16px 18px;background:#3E3E3E;border-radius:10px;
   border-left:5px solid #FFD966;font-family:'Nanum Gothic','Malgun Gothic',sans-serif;
   white-space:pre-wrap;word-break:keep-all;font-size:15px;line-height:1.85;color:#E8E8E8}
+
+/* 2. 세부 항목 제목 크기 (20px) */
 [data-testid="stExpander"]{background:#3A3A3A!important;border:1px solid #4A4A4A!important;
   border-radius:10px!important;margin-bottom:6px}
-[data-testid="stExpander"] summary{color:#E8E8E8!important;font-weight:bold;font-size:20px}
+[data-testid="stExpander"] summary{color:#E8E8E8!important;font-weight:bold;font-size:20px!important}
 [data-testid="stExpander"] summary:hover,
 [data-testid="stExpander"] summary:focus,
 [data-testid="stExpander"] summary:active {
@@ -52,6 +58,8 @@ div.stButton>button:hover{background:#505050!important;border-color:#FFD966!impo
 hr{border-color:#4A4A4A!important}
 [data-testid="stNotification"]{border-radius:8px!important}
 .stCaption,[data-testid="stCaptionContainer"]{color:#AAA!important}
+
+/* 3. 상세 화면 상단 카테고리 제목 (24px) */
 .cat-header{font-size:24px;font-weight:bold;color:#FFD966;margin:6px 0 10px;
   padding-bottom:4px;border-bottom:1px solid #555}
 </style>""", unsafe_allow_html=True)
@@ -116,9 +124,12 @@ def upload_image(img_file) -> str | None:
 #  헬퍼 함수 & 콜백 함수
 # ════════════════════════════════════════
 FORMATS = [
+    # 마크다운 헤더 방식 (앞에만 기호 작성 후 띄어쓰기)
     (r'(?m)^### (.+)$', r'<span style="font-size:20px !important;font-weight:bold;color:#FFD966">\1</span>'),
     (r'(?m)^## (.+)$',  r'<span style="font-size:24px !important;font-weight:bold;color:#FFD966">\1</span>'),
     (r'(?m)^# (.+)$',   r'<span style="font-size:28px !important;font-weight:bold;color:#FFD966">\1</span>'),
+    
+    # 단어 양옆 감싸기 방식
     (r'\^\^\^(.+?)\^\^\^', r'<span style="font-size:28px !important;font-weight:bold;color:#FFD966">\1</span>'),
     (r'##(.+?)##',          r'<span style="font-size:22px !important;font-weight:bold;color:#FFD966">\1</span>'),
     (r'~~(.+?)~~',          r'<span style="font-size:12px !important;color:#AAA">\1</span>'),
@@ -135,7 +146,11 @@ def render_content(text: str) -> str:
     return s.replace('\n', '<br>')
 
 def clean_key(key: str) -> str:
-    return re.sub(r'##(.+?)##', r'\1', key).strip()
+    # 카테고리명에 기호가 들어가더라도 화면에 보일 땐 기호가 지워지도록 필터링
+    s = re.sub(r'\^\^\^(.+?)\^\^\^', r'\1', key)
+    s = re.sub(r'##(.+?)##', r'\1', s)
+    s = re.sub(r'^#+\s*', '', s)
+    return s.strip()
 
 def parse_content(content) -> tuple[str, list]:
     if isinstance(content, dict):
@@ -148,7 +163,7 @@ def render_card(content):
                 unsafe_allow_html=True)
     for url in images: st.image(url, use_container_width=True)
 
-# 메인 화면으로 돌아가면서 검색창을 초기화하는 콜백 함수 (에러 해결 핵심)
+# 메인 화면으로 돌아가면서 검색창을 초기화하는 콜백 함수
 def go_to_main():
     st.session_state.page = 'main'
     st.session_state.search_query = ""
@@ -261,7 +276,6 @@ def summary_dialog():
 st.markdown("<p class='header-title'>⚡ 설비 유지보수 시스템</p>", unsafe_allow_html=True)
 
 st.markdown('<div class="menu-section">', unsafe_allow_html=True)
-# 콜백을 사용하여 오류 없이 초기화 적용
 if st.button("🏠 메인", use_container_width=True, on_click=go_to_main): pass
 if st.button("📋 요약도", use_container_width=True): summary_dialog()
 if st.button("⚙️ 설정", use_container_width=True):   admin_dialog()
@@ -292,7 +306,6 @@ elif ss.page == 'main':
 elif ss.page == 'detail':
     cat = ss.selected_main
     st.markdown('<div class="back-btn">', unsafe_allow_html=True)
-    # 뒤로가기 버튼에도 동일한 콜백 적용 (에러 완벽 해결)
     if st.button("◀  뒤로가기", key="back_btn", on_click=go_to_main): pass
     st.markdown('</div>', unsafe_allow_html=True)
     
