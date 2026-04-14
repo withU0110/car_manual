@@ -9,95 +9,87 @@ from PIL import Image, ImageOps
 st.set_page_config(page_title="설비 관리 시스템", layout="wide")
 
 st.markdown("""<style>
-.stApp,[data-testid="stAppViewContainer"]{background:#333;color:#E8E8E8}
-[data-testid="stHeader"],[data-testid="stSidebar"]{background:#2A2A2A}
-.block-container{padding:4rem 1rem 1rem !important;background:#333; overflow-x:hidden!important}
+.stApp, [data-testid="stAppViewContainer"] {background:#333;color:#E8E8E8}
+[data-testid="stHeader"], [data-testid="stSidebar"] {background:#2A2A2A}
+.block-container {padding:4rem 1rem 1rem !important; background:#333; overflow-x:hidden!important}
 
-/* 상단 메인 제목 폰트 사이즈 (45px) */
-.header-title{font-size:45px!important;font-weight:bold;color:#FFD966;text-align:center;
-  margin-top:10px;margin-bottom:20px;letter-spacing:2px;text-shadow:0 2px 5px rgba(0,0,0,.6)}
+/* 상단 메인 제목 */
+.header-title {font-size:45px!important; font-weight:bold; color:#FFD966; text-align:center;
+  margin-top:10px; margin-bottom:20px; letter-spacing:2px; text-shadow:0 2px 5px rgba(0,0,0,.6)}
 
-/* 공통 버튼 디자인 */
-div.stButton>button{width:100%;font-weight:bold;border-radius:8px;background:#444!important;
-  border:1px solid #555!important;color:#E8E8E8!important;transition:.2s}
-div.stButton>button:hover{background:#505050!important;border-color:#FFD966!important;}
+/* =========================================
+   1. 하단 계통(메인 카테고리) 버튼 (Primary 타입 적용)
+   ========================================= */
+button[data-testid="baseButton-primary"] {
+  height: 80px !important; border-radius: 12px !important; box-shadow: 2px 2px 8px rgba(0,0,0,.4) !important;
+  background: #444 !important; border: 1px solid #555 !important; width: 100% !important; transition: .2s;
+}
+button[data-testid="baseButton-primary"] p {
+  font-size: 40px !important; font-weight: bold !important; color: #E8E8E8 !important;
+}
+button[data-testid="baseButton-primary"]:hover { background: #505050 !important; border-color: #FFD966 !important; }
+button[data-testid="baseButton-primary"]:hover p { color: #FFD966 !important; }
 
-/* 1. 하단 계통(메인 카테고리) 버튼 */
-.category-section div.stButton>button {
-  height:80px; border-radius:12px; box-shadow:2px 2px 8px rgba(0,0,0,.4); margin-bottom:8px;
+/* =========================================
+   2. 상단 메뉴(메인/요약도/설정) 3분할 네모 박스 (400px 확대 & 모바일 강제 1줄)
+   ========================================= */
+div[data-testid="stHorizontalBlock"]:first-of-type {
+  display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important;
+  width: 100% !important; gap: 8px !important;
 }
-.category-section div.stButton>button p, .category-section div.stButton>button span {
-  font-size:40px!important; font-weight:bold!important; color:#E8E8E8!important;
+div[data-testid="stHorizontalBlock"]:first-of-type > div[data-testid="column"] {
+  width: 33.33% !important; min-width: 0 !important; flex: 1 1 0 !important; /* 모바일에서 화면 밖으로 밀려나는 것 완벽 차단 */
 }
-.category-section div.stButton>button:hover p, .category-section div.stButton>button:hover span {
-  color:#FFD966!important;
+div[data-testid="stHorizontalBlock"]:first-of-type button {
+  height: 400px !important; border-radius: 12px !important; 
+  border: 1.5px solid #FFD966 !important; background: #3A3A3A !important;
+  width: 100% !important; padding: 0 !important; transition: .2s;
+}
+div[data-testid="stHorizontalBlock"]:first-of-type button p {
+  font-size: clamp(14px, 4vw, 40px) !important; color: #FFD966 !important;
+  white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important;
+}
+div[data-testid="stHorizontalBlock"]:first-of-type button:hover { background: #FFD966 !important; }
+div[data-testid="stHorizontalBlock"]:first-of-type button:hover p { color: #1E1E1E !important; }
+
+/* =========================================
+   3. 기타 보조 버튼 (뒤로가기, 저장 등 다이얼로그 버튼)
+   ========================================= */
+button[data-testid="baseButton-secondary"]:not(div[data-testid="stHorizontalBlock"]:first-of-type button) {
+  height: 45px !important; border-radius: 8px !important;
+  background: #3A3A3A !important; border: 1px solid #7CB9E8 !important; transition: .2s;
+}
+button[data-testid="baseButton-secondary"]:not(div[data-testid="stHorizontalBlock"]:first-of-type button) p {
+  font-size: 20px !important; color: #7CB9E8 !important;
+}
+button[data-testid="baseButton-secondary"]:not(div[data-testid="stHorizontalBlock"]:first-of-type button):hover {
+  background: #7CB9E8 !important;
+}
+button[data-testid="baseButton-secondary"]:not(div[data-testid="stHorizontalBlock"]:first-of-type button):hover p {
+  color: #1E1E1E !important;
 }
 
-/* 2. 상단 메뉴(메인/요약도/설정) 버튼 - 가로 스크롤 완벽 차단 & 세로 4배(400px) 확대 */
-/* 화면 밖으로 밀려나지 않게 비율 강제 배분 */
-[data-testid="stHorizontalBlock"]:first-of-type { 
-  display: flex !important; flex-wrap: nowrap !important; gap: 6px !important; width: 100% !important; 
-}
-[data-testid="stHorizontalBlock"]:first-of-type > [data-testid="column"] {
-  flex: 1 1 0 !important; width: auto !important; min-width: 0 !important;
-}
-/* 버튼 높이 400px (기존 110px의 약 4배) */
-.menu-section div.stButton>button {
-  border:1.5px solid #FFD966!important; background:#3A3A3A!important;
-  height:400px!important; border-radius:12px!important; display:flex; justify-content:center; align-items:center;
-}
-.menu-section div.stButton>button p, .menu-section div.stButton>button span {
-  font-size:clamp(16px, 4.5vw, 40px)!important; /* 모바일에서 글씨가 잘리지 않도록 자동 크기 조절 */
-  color:#FFD966!important; white-space:nowrap;
-}
-.menu-section div.stButton>button:hover {background:#FFD966!important;}
-.menu-section div.stButton>button:hover p, .menu-section div.stButton>button:hover span {
-  color:#1E1E1E!important;
-}
-
-/* 3. 뒤로가기 버튼 유지 */
-.back-btn div.stButton>button {
-  height:45px!important; border:1px solid #7CB9E8!important;
-  border-radius:8px!important; background:#3A3A3A!important;
-  box-shadow:none!important; margin-bottom:8px!important; width:auto!important; padding:0 20px!important;
-}
-.back-btn div.stButton>button p, .back-btn div.stButton>button span {
-  font-size:20px!important; color:#7CB9E8!important;
-}
-.back-btn div.stButton>button:hover {background:#7CB9E8!important;}
-.back-btn div.stButton>button:hover p, .back-btn div.stButton>button:hover span {
-  color:#1E1E1E!important;
-}
-
-/* 상세 내용 카드 폰트 크기 */
-.detail-card-content{padding:16px 18px;background:#3E3E3E;border-radius:10px;
+/* =========================================
+   기타 세부 항목 및 텍스트 박스 디자인
+   ========================================= */
+.detail-card-content {padding:16px 18px;background:#3E3E3E;border-radius:10px;
   border-left:5px solid #FFD966;font-family:'Nanum Gothic','Malgun Gothic',sans-serif;
   white-space:pre-wrap;word-break:keep-all;font-size:20px;line-height:1.85;color:#E8E8E8}
-
-/* 세부 항목(안내륜/안정륜) 제목 크기 */
-[data-testid="stExpander"]{background:#3A3A3A!important;border:1px solid #4A4A4A!important;
+[data-testid="stExpander"] {background:#3A3A3A!important;border:1px solid #4A4A4A!important;
   border-radius:10px!important;margin-bottom:6px}
-[data-testid="stExpander"] summary{color:#E8E8E8!important;font-weight:bold;font-size:40px!important; padding:15px!}
+[data-testid="stExpander"] summary {color:#E8E8E8!important;font-weight:bold;font-size:40px!important; padding:15px!}
 [data-testid="stExpander"] summary:hover, [data-testid="stExpander"] summary:focus, [data-testid="stExpander"] summary:active {
   color:#E8E8E8 !important; outline:none !important; border:none !important; background:transparent !important;
 }
 [data-testid="stExpander"] summary:hover p, [data-testid="stExpander"] summary:focus p, [data-testid="stExpander"] summary:active p { color:#E8E8E8 !important; }
-
-/* 기타 UI 설정 */
-[data-testid="stTextInput"] input,[data-testid="stTextArea"] textarea,
-[data-testid="stSelectbox"] div[data-baseweb="select"]{background:#444!important;
-  color:#E8E8E8!important;border:1px solid #555!important;border-radius:8px!important;font-size:20px!important}
-[data-testid="stTextInput"] input::placeholder{color:#999!important}
-[data-testid="stTextInput"] label,[data-testid="stTextArea"] label,
-[data-testid="stSelectbox"] label{color:#BBB!important;font-size:18px!important}
-[data-testid="stTabs"] [role="tab"]{color:#BBB!important;font-size:18px}
-[data-testid="stTabs"] [role="tab"][aria-selected="true"]{color:#FFD966!important;border-bottom:2px solid #FFD966!important}
-hr{border-color:#4A4A4A!important}
-[data-testid="stNotification"]{border-radius:8px!important}
-.stCaption,[data-testid="stCaptionContainer"]{color:#AAA!important}
-
-/* 상세 화면 상단 카테고리 제목 */
-.cat-header{font-size:40px;font-weight:bold;color:#FFD966;margin:6px 0 15px;
+[data-testid="stTextInput"] input,[data-testid="stTextArea"] textarea, [data-testid="stSelectbox"] div[data-baseweb="select"] {
+  background:#444!important; color:#E8E8E8!important;border:1px solid #555!important;border-radius:8px!important;font-size:20px!important}
+[data-testid="stTextInput"] input::placeholder {color:#999!important}
+[data-testid="stTextInput"] label,[data-testid="stTextArea"] label, [data-testid="stSelectbox"] label {color:#BBB!important;font-size:18px!important}
+[data-testid="stTabs"] [role="tab"] {color:#BBB!important;font-size:18px}
+[data-testid="stTabs"] [role="tab"][aria-selected="true"] {color:#FFD966!important;border-bottom:2px solid #FFD966!important}
+hr {border-color:#4A4A4A!important}
+.cat-header {font-size:40px;font-weight:bold;color:#FFD966;margin:6px 0 15px;
   padding-bottom:8px;border-bottom:1px solid #555}
 </style>""", unsafe_allow_html=True)
 
@@ -307,8 +299,7 @@ def summary_dialog():
 # ════════════════════════════════════════
 st.markdown("<p class='header-title'>⚡ 설비 유지보수 시스템</p>", unsafe_allow_html=True)
 
-# 한 줄에 3칸 강제 배열 (모바일/PC 공통)
-st.markdown('<div class="menu-section">', unsafe_allow_html=True)
+# 상단 메뉴 3개 (반드시 맨 처음 호출되어야 CSS가 정상 적용됨)
 col1, col2, col3 = st.columns(3)
 with col1:
     if st.button("🏠 메인", use_container_width=True, on_click=go_to_main): pass
@@ -316,7 +307,6 @@ with col2:
     if st.button("📋 요약도", use_container_width=True): summary_dialog()
 with col3:
     if st.button("⚙️ 설정", use_container_width=True):   admin_dialog()
-st.markdown('</div>', unsafe_allow_html=True)
 
 st.divider()
 
@@ -335,18 +325,15 @@ if query:
     if not found: st.info("검색 결과가 없습니다.")
 
 elif ss.page == 'main':
-    st.markdown('<div class="category-section">', unsafe_allow_html=True)
+    # 하단 카테고리 (type="primary" 속성 부여)
     for cat in DB_KEYS:
         if cat == "__meta__": continue
-        if st.button(clean_key(cat), use_container_width=True):
+        if st.button(clean_key(cat), use_container_width=True, type="primary"):
             ss.selected_main = cat; ss.page = 'detail'; st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
 
 elif ss.page == 'detail':
     cat = ss.selected_main
-    st.markdown('<div class="back-btn">', unsafe_allow_html=True)
     if st.button("◀  뒤로가기", key="back_btn", on_click=go_to_main): pass
-    st.markdown('</div>', unsafe_allow_html=True)
     
     st.markdown(f"<div class='cat-header'>📍 {clean_key(cat)}</div>", unsafe_allow_html=True)
     for sub, content in details[cat].items():
