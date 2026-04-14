@@ -12,7 +12,7 @@ st.markdown("""<style>
 .stApp,[data-testid="stAppViewContainer"]{background:#333;color:#E8E8E8}
 [data-testid="stHeader"],[data-testid="stSidebar"]{background:#2A2A2A}
 .block-container{padding:4rem 1rem 1rem !important;background:#333}
-.header-title{font-size:26px;font-weight:bold;color:#FFD966;text-align:center;
+.header-title{font-size:45px;font-weight:bold;color:#FFD966;text-align:center;
   margin-top:20px;margin-bottom:10px;letter-spacing:1px;text-shadow:0 1px 3px rgba(0,0,0,.5)}
 
 /* 1. 메인 화면 카테고리 버튼 크기 (40px) 및 높이 조정 */
