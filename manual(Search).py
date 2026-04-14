@@ -6,12 +6,12 @@ from PIL import Image, ImageOps
 # ════════════════════════════════════════
 #  설정
 # ════════════════════════════════════════
-st.set_page_config(page_title="🚃모터카 장애 대응 매뉴얼", layout="wide")
+st.set_page_config(page_title="설비 관리 시스템", layout="wide")
 
 st.markdown("""<style>
 .stApp,[data-testid="stAppViewContainer"]{background:#333;color:#E8E8E8}
 [data-testid="stHeader"],[data-testid="stSidebar"]{background:#2A2A2A}
-.block-container{padding:4rem 1rem 1rem !important;background:#333}
+.block-container{padding:4rem 1rem 1rem !important;background:#333; overflow-x:hidden!important}
 
 /* 상단 메인 제목 폰트 사이즈 (45px) */
 .header-title{font-size:45px!important;font-weight:bold;color:#FFD966;text-align:center;
@@ -33,20 +33,22 @@ div.stButton>button:hover{background:#505050!important;border-color:#FFD966!impo
   color:#FFD966!important;
 }
 
-/* 2. 상단 메뉴(메인/요약도/설정) 버튼 - 반응형 네모 박스 3칸 유지 */
-/* 모바일 화면에서도 1줄(가로) 3칸 강제 유지하는 핵심 코드 */
-[data-testid="stHorizontalBlock"]:first-of-type { flex-wrap: nowrap !important; gap: 8px !important; }
-[data-testid="stHorizontalBlock"]:first-of-type > [data-testid="column"] {
-    width: 33.33% !important; flex: 1 1 33.33% !important; min-width: 0 !important;
+/* 2. 상단 메뉴(메인/요약도/설정) 버튼 - 가로 스크롤 완벽 차단 & 세로 4배(400px) 확대 */
+/* 화면 밖으로 밀려나지 않게 비율 강제 배분 */
+[data-testid="stHorizontalBlock"]:first-of-type { 
+  display: flex !important; flex-wrap: nowrap !important; gap: 6px !important; width: 100% !important; 
 }
-/* 버튼 형태 및 반응형 폰트 적용 */
+[data-testid="stHorizontalBlock"]:first-of-type > [data-testid="column"] {
+  flex: 1 1 0 !important; width: auto !important; min-width: 0 !important;
+}
+/* 버튼 높이 400px (기존 110px의 약 4배) */
 .menu-section div.stButton>button {
   border:1.5px solid #FFD966!important; background:#3A3A3A!important;
-  height:110px!important; border-radius:12px!important; display:flex; justify-content:center; align-items:center;
+  height:400px!important; border-radius:12px!important; display:flex; justify-content:center; align-items:center;
 }
 .menu-section div.stButton>button p, .menu-section div.stButton>button span {
-  font-size:clamp(18px, 4vw, 40px)!important; /* 화면 크기에 맞춰 18~40px 사이로 자동 조절 */
-  color:#FFD966!important; white-space:nowrap; /* 글씨 줄바꿈 방지 */
+  font-size:clamp(16px, 4.5vw, 40px)!important; /* 모바일에서 글씨가 잘리지 않도록 자동 크기 조절 */
+  color:#FFD966!important; white-space:nowrap;
 }
 .menu-section div.stButton>button:hover {background:#FFD966!important;}
 .menu-section div.stButton>button:hover p, .menu-section div.stButton>button:hover span {
@@ -303,9 +305,9 @@ def summary_dialog():
 # ════════════════════════════════════════
 #  화면 렌더링
 # ════════════════════════════════════════
-st.markdown("<p class='header-title'>🚃모터카 장애 대응 매뉴얼</p>", unsafe_allow_html=True)
+st.markdown("<p class='header-title'>⚡ 설비 유지보수 시스템</p>", unsafe_allow_html=True)
 
-# 한 줄에 3칸 배열 적용 (가로 분할)
+# 한 줄에 3칸 강제 배열 (모바일/PC 공통)
 st.markdown('<div class="menu-section">', unsafe_allow_html=True)
 col1, col2, col3 = st.columns(3)
 with col1:
@@ -333,7 +335,6 @@ if query:
     if not found: st.info("검색 결과가 없습니다.")
 
 elif ss.page == 'main':
-    # 메인 카테고리 버튼들을 감싸는 전용 구역
     st.markdown('<div class="category-section">', unsafe_allow_html=True)
     for cat in DB_KEYS:
         if cat == "__meta__": continue
