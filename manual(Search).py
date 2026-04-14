@@ -11,7 +11,6 @@ st.set_page_config(page_title="설비 관리 시스템", layout="wide")
 st.markdown("""<style>
 .stApp,[data-testid="stAppViewContainer"]{background:#333;color:#E8E8E8}
 [data-testid="stHeader"],[data-testid="stSidebar"]{background:#2A2A2A}
-/* 타이틀 잘림 방지를 위해 상단 패딩을 2.5rem에서 4rem으로 확장 */
 .block-container{padding:4rem 1rem 1rem !important;background:#333}
 .header-title{font-size:22px;font-weight:bold;color:#FFD966;text-align:center;
   margin-top:20px;margin-bottom:10px;letter-spacing:1px;text-shadow:0 1px 3px rgba(0,0,0,.5)}
@@ -33,7 +32,6 @@ div.stButton>button:hover{background:#505050!important;border-color:#FFD966!impo
 [data-testid="stExpander"]{background:#3A3A3A!important;border:1px solid #4A4A4A!important;
   border-radius:10px!important;margin-bottom:6px}
 [data-testid="stExpander"] summary{color:#E8E8E8!important;font-weight:bold;font-size:15px}
-/* 메뉴(Expander) 클릭 시 포커스 색상 변경되는 현상 방지 */
 [data-testid="stExpander"] summary:hover,
 [data-testid="stExpander"] summary:focus,
 [data-testid="stExpander"] summary:active {
@@ -115,9 +113,8 @@ def upload_image(img_file) -> str | None:
     st.error(f"이미지 업로드 실패 ({filename}): {res.status_code}"); return None
 
 # ════════════════════════════════════════
-#  헬퍼 함수
+#  헬퍼 함수 & 콜백 함수
 # ════════════════════════════════════════
-# 폰트 사이즈가 먹히지 않던 문제를 해결하기 위해 !important 추가 및 일반 Markdown 헤더 패턴 추가
 FORMATS = [
     (r'(?m)^### (.+)$', r'<span style="font-size:20px !important;font-weight:bold;color:#FFD966">\1</span>'),
     (r'(?m)^## (.+)$',  r'<span style="font-size:24px !important;font-weight:bold;color:#FFD966">\1</span>'),
@@ -150,6 +147,11 @@ def render_card(content):
     st.markdown(f'<div class="detail-card-content">{render_content(text)}</div>',
                 unsafe_allow_html=True)
     for url in images: st.image(url, use_container_width=True)
+
+# 메인 화면으로 돌아가면서 검색창을 초기화하는 콜백 함수 (에러 해결 핵심)
+def go_to_main():
+    st.session_state.page = 'main'
+    st.session_state.search_query = ""
 
 # ════════════════════════════════════════
 #  데이터 & 세션 초기화
@@ -259,17 +261,14 @@ def summary_dialog():
 st.markdown("<p class='header-title'>⚡ 설비 유지보수 시스템</p>", unsafe_allow_html=True)
 
 st.markdown('<div class="menu-section">', unsafe_allow_html=True)
-if st.button("🏠 메인", use_container_width=True):
-    ss.page = 'main'
-    ss.search_query = "" # 메인 복귀 시 검색창 초기화
-    st.rerun()
+# 콜백을 사용하여 오류 없이 초기화 적용
+if st.button("🏠 메인", use_container_width=True, on_click=go_to_main): pass
 if st.button("📋 요약도", use_container_width=True): summary_dialog()
 if st.button("⚙️ 설정", use_container_width=True):   admin_dialog()
 st.markdown('</div>', unsafe_allow_html=True)
 
 st.divider()
 
-# key 속성을 추가하여 session_state에 직접 연결
 query = st.text_input("🔍 문제점 검색", placeholder="단어 입력", label_visibility="collapsed", key="search_query")
 
 if query:
@@ -293,11 +292,10 @@ elif ss.page == 'main':
 elif ss.page == 'detail':
     cat = ss.selected_main
     st.markdown('<div class="back-btn">', unsafe_allow_html=True)
-    if st.button("◀  뒤로가기", key="back_btn"): 
-        ss.page = 'main'
-        ss.search_query = "" # 뒤로가기 시 검색창 초기화
-        st.rerun()
+    # 뒤로가기 버튼에도 동일한 콜백 적용 (에러 완벽 해결)
+    if st.button("◀  뒤로가기", key="back_btn", on_click=go_to_main): pass
     st.markdown('</div>', unsafe_allow_html=True)
+    
     st.markdown(f"<div class='cat-header'>📍 {clean_key(cat)}</div>", unsafe_allow_html=True)
     for sub, content in details[cat].items():
         with st.expander(f"🔎 {sub}", expanded=False): render_card(content)
