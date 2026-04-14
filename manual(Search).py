@@ -6,7 +6,7 @@ from PIL import Image, ImageOps
 # ════════════════════════════════════════
 #  설정
 # ════════════════════════════════════════
-st.set_page_config(page_title="설비 관리 시스템", layout="wide")
+st.set_page_config(page_title="모터카 장애 대응 매뉴얼", layout="wide")
 
 st.markdown("""<style>
 .stApp,[data-testid="stAppViewContainer"]{background:#333;color:#E8E8E8}
@@ -273,7 +273,7 @@ def summary_dialog():
 # ════════════════════════════════════════
 #  화면 렌더링
 # ════════════════════════════════════════
-st.markdown("<p class='header-title'>⚡ 설비 유지보수 시스템</p>", unsafe_allow_html=True)
+st.markdown("<p class='header-title'>🚞모터카 유지보수 매뉴얼</p>", unsafe_allow_html=True)
 
 st.markdown('<div class="menu-section">', unsafe_allow_html=True)
 if st.button("🏠 메인", use_container_width=True, on_click=go_to_main): pass
