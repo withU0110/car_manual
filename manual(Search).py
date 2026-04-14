@@ -6,7 +6,7 @@ from PIL import Image, ImageOps
 # ════════════════════════════════════════
 #  설정
 # ════════════════════════════════════════
-st.set_page_config(page_title="설비 관리 시스템", layout="wide")
+st.set_page_config(page_title="🚃모터카 장애 대응 매뉴얼", layout="wide")
 
 st.markdown("""<style>
 .stApp,[data-testid="stAppViewContainer"]{background:#333;color:#E8E8E8}
@@ -17,12 +17,12 @@ st.markdown("""<style>
 .header-title{font-size:45px!important;font-weight:bold;color:#FFD966;text-align:center;
   margin-top:10px;margin-bottom:20px;letter-spacing:2px;text-shadow:0 2px 5px rgba(0,0,0,.6)}
 
-/* 공통 버튼 디자인 (다이얼로그 내 작은 버튼들 붕괴 방지) */
+/* 공통 버튼 디자인 */
 div.stButton>button{width:100%;font-weight:bold;border-radius:8px;background:#444!important;
   border:1px solid #555!important;color:#E8E8E8!important;transition:.2s}
 div.stButton>button:hover{background:#505050!important;border-color:#FFD966!important;}
 
-/* 1. 하단 계통(메인 카테고리) 버튼 - 폰트 강제 적용(p, span) */
+/* 1. 하단 계통(메인 카테고리) 버튼 */
 .category-section div.stButton>button {
   height:80px; border-radius:12px; box-shadow:2px 2px 8px rgba(0,0,0,.4); margin-bottom:8px;
 }
@@ -33,13 +33,20 @@ div.stButton>button:hover{background:#505050!important;border-color:#FFD966!impo
   color:#FFD966!important;
 }
 
-/* 2. 상단 메뉴(메인/요약도/설정) 버튼 - 폰트 강제 적용(p, span) */
+/* 2. 상단 메뉴(메인/요약도/설정) 버튼 - 반응형 네모 박스 3칸 유지 */
+/* 모바일 화면에서도 1줄(가로) 3칸 강제 유지하는 핵심 코드 */
+[data-testid="stHorizontalBlock"]:first-of-type { flex-wrap: nowrap !important; gap: 8px !important; }
+[data-testid="stHorizontalBlock"]:first-of-type > [data-testid="column"] {
+    width: 33.33% !important; flex: 1 1 33.33% !important; min-width: 0 !important;
+}
+/* 버튼 형태 및 반응형 폰트 적용 */
 .menu-section div.stButton>button {
   border:1.5px solid #FFD966!important; background:#3A3A3A!important;
-  height:70px!important; border-radius:10px!important;
+  height:110px!important; border-radius:12px!important; display:flex; justify-content:center; align-items:center;
 }
 .menu-section div.stButton>button p, .menu-section div.stButton>button span {
-  font-size:40px!important; color:#FFD966!important;
+  font-size:clamp(18px, 4vw, 40px)!important; /* 화면 크기에 맞춰 18~40px 사이로 자동 조절 */
+  color:#FFD966!important; white-space:nowrap; /* 글씨 줄바꿈 방지 */
 }
 .menu-section div.stButton>button:hover {background:#FFD966!important;}
 .menu-section div.stButton>button:hover p, .menu-section div.stButton>button:hover span {
@@ -60,23 +67,19 @@ div.stButton>button:hover{background:#505050!important;border-color:#FFD966!impo
   color:#1E1E1E!important;
 }
 
-/* 상세 내용 카드 내용 폰트 크기 */
+/* 상세 내용 카드 폰트 크기 */
 .detail-card-content{padding:16px 18px;background:#3E3E3E;border-radius:10px;
   border-left:5px solid #FFD966;font-family:'Nanum Gothic','Malgun Gothic',sans-serif;
   white-space:pre-wrap;word-break:keep-all;font-size:20px;line-height:1.85;color:#E8E8E8}
 
-/* 세부 항목(안내륜/안정륜) 제목 크기 (40px) */
+/* 세부 항목(안내륜/안정륜) 제목 크기 */
 [data-testid="stExpander"]{background:#3A3A3A!important;border:1px solid #4A4A4A!important;
   border-radius:10px!important;margin-bottom:6px}
 [data-testid="stExpander"] summary{color:#E8E8E8!important;font-weight:bold;font-size:40px!important; padding:15px!}
-[data-testid="stExpander"] summary:hover,
-[data-testid="stExpander"] summary:focus,
-[data-testid="stExpander"] summary:active {
+[data-testid="stExpander"] summary:hover, [data-testid="stExpander"] summary:focus, [data-testid="stExpander"] summary:active {
   color:#E8E8E8 !important; outline:none !important; border:none !important; background:transparent !important;
 }
-[data-testid="stExpander"] summary:hover p,
-[data-testid="stExpander"] summary:focus p,
-[data-testid="stExpander"] summary:active p { color:#E8E8E8 !important; }
+[data-testid="stExpander"] summary:hover p, [data-testid="stExpander"] summary:focus p, [data-testid="stExpander"] summary:active p { color:#E8E8E8 !important; }
 
 /* 기타 UI 설정 */
 [data-testid="stTextInput"] input,[data-testid="stTextArea"] textarea,
@@ -91,7 +94,7 @@ hr{border-color:#4A4A4A!important}
 [data-testid="stNotification"]{border-radius:8px!important}
 .stCaption,[data-testid="stCaptionContainer"]{color:#AAA!important}
 
-/* 상세 화면 상단 카테고리 제목 (40px) */
+/* 상세 화면 상단 카테고리 제목 */
 .cat-header{font-size:40px;font-weight:bold;color:#FFD966;margin:6px 0 15px;
   padding-bottom:8px;border-bottom:1px solid #555}
 </style>""", unsafe_allow_html=True)
@@ -300,12 +303,17 @@ def summary_dialog():
 # ════════════════════════════════════════
 #  화면 렌더링
 # ════════════════════════════════════════
-st.markdown("<p class='header-title'>⚡ 설비 유지보수 시스템</p>", unsafe_allow_html=True)
+st.markdown("<p class='header-title'>🚃모터카 장애 대응 매뉴얼</p>", unsafe_allow_html=True)
 
+# 한 줄에 3칸 배열 적용 (가로 분할)
 st.markdown('<div class="menu-section">', unsafe_allow_html=True)
-if st.button("🏠 메인", use_container_width=True, on_click=go_to_main): pass
-if st.button("📋 요약도", use_container_width=True): summary_dialog()
-if st.button("⚙️ 설정", use_container_width=True):   admin_dialog()
+col1, col2, col3 = st.columns(3)
+with col1:
+    if st.button("🏠 메인", use_container_width=True, on_click=go_to_main): pass
+with col2:
+    if st.button("📋 요약도", use_container_width=True): summary_dialog()
+with col3:
+    if st.button("⚙️ 설정", use_container_width=True):   admin_dialog()
 st.markdown('</div>', unsafe_allow_html=True)
 
 st.divider()
@@ -325,7 +333,7 @@ if query:
     if not found: st.info("검색 결과가 없습니다.")
 
 elif ss.page == 'main':
-    # 메인 카테고리 버튼들을 감싸는 전용 구역 추가 (다이얼로그 버튼과 분리)
+    # 메인 카테고리 버튼들을 감싸는 전용 구역
     st.markdown('<div class="category-section">', unsafe_allow_html=True)
     for cat in DB_KEYS:
         if cat == "__meta__": continue
