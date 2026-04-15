@@ -100,8 +100,9 @@ hr{border-color:#4A4A4A!important}
    ════════════════════════════════════════ */
 .html-cat-grid{
   display:grid;
-  grid-template-columns:repeat(2,1fr);
-  grid-template-rows:repeat(2,1fr);
+  /*grid-template-columns:repeat(2,1fr);
+  grid-template-rows:repeat(2,1fr);*/
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap:10px;
   margin-top:10px;
 }
