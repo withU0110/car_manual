@@ -96,7 +96,7 @@ hr{border-color:#4A4A4A!important}
 .html-menu-btn:hover{background:#FFD966;color:#1E1E1E;}
 
 /* ════════════════════════════════════════
-   순수 HTML 카테고리 4분할 그리드 (십자가)
+   순수 HTML 카테고리 유동 분할 그리드
    ════════════════════════════════════════ */
 .html-cat-grid{
   display:grid;
