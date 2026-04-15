@@ -6,7 +6,7 @@ from PIL import Image, ImageOps
 # ════════════════════════════════════════
 #  설정
 # ════════════════════════════════════════
-st.set_page_config(page_title="설비 관리 시스템", layout="wide")
+st.set_page_config(page_title="철도장비 스마트 관리체계", layout="wide")
 
 st.markdown("""<style>
 .stApp,[data-testid="stAppViewContainer"]{background:#333;color:#E8E8E8}
@@ -16,7 +16,7 @@ st.markdown("""<style>
 /* ── 제목: 항상 한 줄, 화면 너비에 맞게 폰트 자동 축소 ── */
 .header-title{
   font-weight:bold;color:#FFD966;text-align:center;
-  margin-top:10px;margin-bottom:20px;letter-spacing:2px;
+  margin-top:9px;margin-bottom:20px;letter-spacing:2px;
   text-shadow:0 2px 5px rgba(0,0,0,.6);
   font-size:clamp(20px, 5vw, 45px)!important;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
@@ -341,7 +341,7 @@ if "nav" in qp:
     st.query_params.clear()
 
 # ── 제목 ──
-st.markdown("<p class='header-title'>⚡ 설비 유지보수 시스템</p>", unsafe_allow_html=True)
+st.markdown("<p class='header-title'>철도장비 스마트 관리체계</p>", unsafe_allow_html=True)
 
 # ── 상단 메뉴: HTML 3열 그리드 (항상 한 줄) ──
 st.markdown("""
