@@ -13,70 +13,21 @@ st.markdown("""<style>
 [data-testid="stHeader"],[data-testid="stSidebar"]{background:#2A2A2A}
 .block-container{padding:4rem 1rem 1rem !important;background:#333}
 
-/* 상단 메인 제목 폰트 사이즈 (45px) */
-.header-title{font-size:45px!important;font-weight:bold;color:#FFD966;text-align:center;
-  margin-top:10px;margin-bottom:20px;letter-spacing:2px;text-shadow:0 2px 5px rgba(0,0,0,.6)}
+/* ── 제목: 항상 한 줄, 화면 너비에 맞게 폰트 자동 축소 ── */
+.header-title{
+  font-weight:bold;color:#FFD966;text-align:center;
+  margin-top:10px;margin-bottom:20px;letter-spacing:2px;
+  text-shadow:0 2px 5px rgba(0,0,0,.6);
+  font-size:clamp(20px, 5vw, 45px)!important;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
 
-/* 공통 버튼 디자인 (다이얼로그 내 작은 버튼들 붕괴 방지) */
+/* ── 공통 Streamlit 버튼 (다이얼로그 내부용) ── */
 div.stButton>button{width:100%;font-weight:bold;border-radius:8px;background:#444!important;
   border:1px solid #555!important;color:#E8E8E8!important;transition:.2s}
 div.stButton>button:hover{background:#505050!important;border-color:#FFD966!important;}
 
-/* 1. 하단 계통(메인 카테고리) 버튼 - 폰트 강제 적용 */
-.category-section div.stButton>button {
-  height:80px; border-radius:12px; box-shadow:2px 2px 8px rgba(0,0,0,.4); margin-bottom:8px;
-  font-size:40px!important; font-weight:bold!important; color:#E8E8E8!important;
-}
-.category-section div.stButton>button *,
-.category-section div.stButton>button p,
-.category-section div.stButton>button span,
-.category-section div.stButton>button div {
-  font-size:40px!important; font-weight:bold!important; color:#E8E8E8!important;
-}
-.category-section div.stButton>button:hover *,
-.category-section div.stButton>button:hover p,
-.category-section div.stButton>button:hover span {
-  color:#FFD966!important;
-}
-@media (max-width: 600px) {
-  .category-section div.stButton>button { height:60px!important; }
-  .category-section div.stButton>button *, .category-section div.stButton>button p,
-  .category-section div.stButton>button span { font-size:26px!important; }
-}
-
-/* 2. 상단 메뉴(메인/요약도/설정) 버튼 - 폰트 강제 적용(p, span) */
-.menu-section div.stButton>button {
-  border:1.5px solid #FFD966!important; background:#3A3A3A!important;
-  height:70px!important; border-radius:10px!important;
-  font-size:40px!important; color:#FFD966!important;
-}
-.menu-section div.stButton>button *,
-.menu-section div.stButton>button p,
-.menu-section div.stButton>button span,
-.menu-section div.stButton>button div {
-  font-size:40px!important; color:#FFD966!important;
-}
-.menu-section div.stButton>button:hover {background:#FFD966!important;}
-.menu-section div.stButton>button:hover,
-.menu-section div.stButton>button:hover *,
-.menu-section div.stButton>button:hover p,
-.menu-section div.stButton>button:hover span {
-  color:#1E1E1E!important;
-}
-
-/* 반응형: 모바일에서 메뉴 버튼 높이/폰트 축소 */
-@media (max-width: 600px) {
-  .menu-section div.stButton>button {
-    height:55px!important;
-  }
-  .menu-section div.stButton>button *,
-  .menu-section div.stButton>button p,
-  .menu-section div.stButton>button span {
-    font-size:26px!important;
-  }
-}
-
-/* 3. 뒤로가기 버튼 유지 */
+/* ── 뒤로가기 버튼 ── */
 .back-btn div.stButton>button {
   height:45px!important; border:1px solid #7CB9E8!important;
   border-radius:8px!important; background:#3A3A3A!important;
@@ -90,25 +41,25 @@ div.stButton>button:hover{background:#505050!important;border-color:#FFD966!impo
   color:#1E1E1E!important;
 }
 
-/* 상세 내용 카드 내용 폰트 크기 */
+/* ── 상세 내용 카드 ── */
 .detail-card-content{padding:16px 18px;background:#3E3E3E;border-radius:10px;
   border-left:5px solid #FFD966;font-family:'Nanum Gothic','Malgun Gothic',sans-serif;
   white-space:pre-wrap;word-break:keep-all;font-size:20px;line-height:1.85;color:#E8E8E8}
 
-/* 세부 항목(안내륜/안정륜) 제목 크기 (40px) */
+/* ── Expander ── */
 [data-testid="stExpander"]{background:#3A3A3A!important;border:1px solid #4A4A4A!important;
   border-radius:10px!important;margin-bottom:6px}
-[data-testid="stExpander"] summary{color:#E8E8E8!important;font-weight:bold;font-size:40px!important; padding:15px!}
+[data-testid="stExpander"] summary{color:#E8E8E8!important;font-weight:bold;font-size:40px!important;padding:15px!important}
 [data-testid="stExpander"] summary:hover,
 [data-testid="stExpander"] summary:focus,
 [data-testid="stExpander"] summary:active {
-  color:#E8E8E8 !important; outline:none !important; border:none !important; background:transparent !important;
+  color:#E8E8E8!important;outline:none!important;border:none!important;background:transparent!important;
 }
 [data-testid="stExpander"] summary:hover p,
 [data-testid="stExpander"] summary:focus p,
-[data-testid="stExpander"] summary:active p { color:#E8E8E8 !important; }
+[data-testid="stExpander"] summary:active p { color:#E8E8E8!important; }
 
-/* 기타 UI 설정 */
+/* ── 기타 UI ── */
 [data-testid="stTextInput"] input,[data-testid="stTextArea"] textarea,
 [data-testid="stSelectbox"] div[data-baseweb="select"]{background:#444!important;
   color:#E8E8E8!important;border:1px solid #555!important;border-radius:8px!important;font-size:20px!important}
@@ -121,9 +72,51 @@ hr{border-color:#4A4A4A!important}
 [data-testid="stNotification"]{border-radius:8px!important}
 .stCaption,[data-testid="stCaptionContainer"]{color:#AAA!important}
 
-/* 상세 화면 상단 카테고리 제목 (40px) */
+/* ── 상세 화면 카테고리 제목 ── */
 .cat-header{font-size:40px;font-weight:bold;color:#FFD966;margin:6px 0 15px;
   padding-bottom:8px;border-bottom:1px solid #555}
+
+/* ════════════════════════════════════════
+   순수 HTML 메뉴 버튼 그리드 (3열, 항상 한 줄)
+   ════════════════════════════════════════ */
+.html-menu-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  margin-bottom:14px;
+}
+.html-menu-grid form{margin:0;padding:0;}
+.html-menu-btn{
+  width:100%;height:65px;
+  border:1.5px solid #FFD966;background:#3A3A3A;
+  color:#FFD966;font-size:clamp(16px,3.5vw,34px);
+  font-weight:bold;border-radius:10px;cursor:pointer;
+  transition:.2s;white-space:nowrap;
+}
+.html-menu-btn:hover{background:#FFD966;color:#1E1E1E;}
+
+/* ════════════════════════════════════════
+   순수 HTML 카테고리 4분할 그리드 (십자가)
+   ════════════════════════════════════════ */
+.html-cat-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  grid-template-rows:repeat(2,1fr);
+  gap:10px;
+  margin-top:10px;
+}
+.html-cat-grid form{margin:0;padding:0;}
+.html-cat-btn{
+  width:100%;
+  aspect-ratio:2/1;
+  min-height:100px;
+  border:none;background:#444;
+  color:#E8E8E8;font-size:clamp(18px,4vw,40px);
+  font-weight:bold;border-radius:12px;cursor:pointer;
+  box-shadow:2px 2px 8px rgba(0,0,0,.4);
+  transition:.2s;
+}
+.html-cat-btn:hover{background:#505050;color:#FFD966;}
 </style>""", unsafe_allow_html=True)
 
 # ════════════════════════════════════════
@@ -330,17 +323,43 @@ def summary_dialog():
 # ════════════════════════════════════════
 #  화면 렌더링
 # ════════════════════════════════════════
+
+# ── query_params로 HTML 버튼 클릭 처리 ──
+qp = st.query_params
+if "nav" in qp:
+    nav = qp["nav"]
+    if nav == "main":
+        ss.page = "main"; ss.search_query = ""
+    elif nav == "summary":
+        st.query_params.clear(); summary_dialog()
+    elif nav == "admin":
+        st.query_params.clear(); admin_dialog()
+    elif nav.startswith("cat:"):
+        cat_key = nav[4:]
+        if cat_key in details:
+            ss.selected_main = cat_key; ss.page = "detail"
+    st.query_params.clear()
+
+# ── 제목 ──
 st.markdown("<p class='header-title'>⚡ 설비 유지보수 시스템</p>", unsafe_allow_html=True)
 
-st.markdown('<div class="menu-section">', unsafe_allow_html=True)
-m1, m2, m3 = st.columns(3)
-with m1:
-    if st.button("🏠 메인", use_container_width=True, on_click=go_to_main): pass
-with m2:
-    if st.button("📋 요약도", use_container_width=True): summary_dialog()
-with m3:
-    if st.button("⚙️ 설정", use_container_width=True): admin_dialog()
-st.markdown('</div>', unsafe_allow_html=True)
+# ── 상단 메뉴: HTML 3열 그리드 (항상 한 줄) ──
+st.markdown("""
+<div class="html-menu-grid">
+  <form action="" method="get">
+    <input type="hidden" name="nav" value="main">
+    <button class="html-menu-btn" type="submit">🏠 메인</button>
+  </form>
+  <form action="" method="get">
+    <input type="hidden" name="nav" value="summary">
+    <button class="html-menu-btn" type="submit">📋 요약도</button>
+  </form>
+  <form action="" method="get">
+    <input type="hidden" name="nav" value="admin">
+    <button class="html-menu-btn" type="submit">⚙️ 설정</button>
+  </form>
+</div>
+""", unsafe_allow_html=True)
 
 st.divider()
 
@@ -359,20 +378,23 @@ if query:
     if not found: st.info("검색 결과가 없습니다.")
 
 elif ss.page == 'main':
-    # 메인 카테고리 버튼들을 감싸는 전용 구역 추가 (다이얼로그 버튼과 분리)
-    st.markdown('<div class="category-section">', unsafe_allow_html=True)
-    for cat in DB_KEYS:
-        if cat == "__meta__": continue
-        if st.button(clean_key(cat), use_container_width=True):
-            ss.selected_main = cat; ss.page = 'detail'; st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
+    # ── 카테고리 4분할 HTML 그리드 ──
+    cat_keys = [k for k in DB_KEYS if k != "__meta__"]
+    btns_html = "".join(
+        f'<form action="" method="get">'
+        f'<input type="hidden" name="nav" value="cat:{k}">'
+        f'<button class="html-cat-btn" type="submit">{clean_key(k)}</button>'
+        f'</form>'
+        for k in cat_keys
+    )
+    st.markdown(f'<div class="html-cat-grid">{btns_html}</div>', unsafe_allow_html=True)
 
 elif ss.page == 'detail':
     cat = ss.selected_main
     st.markdown('<div class="back-btn">', unsafe_allow_html=True)
     if st.button("◀  뒤로가기", key="back_btn", on_click=go_to_main): pass
     st.markdown('</div>', unsafe_allow_html=True)
-    
+
     st.markdown(f"<div class='cat-header'>📍 {clean_key(cat)}</div>", unsafe_allow_html=True)
     for sub, content in details[cat].items():
         with st.expander(f"🔎 {sub}", expanded=False): render_card(content)
