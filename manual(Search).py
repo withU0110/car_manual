@@ -22,28 +22,58 @@ div.stButton>button{width:100%;font-weight:bold;border-radius:8px;background:#44
   border:1px solid #555!important;color:#E8E8E8!important;transition:.2s}
 div.stButton>button:hover{background:#505050!important;border-color:#FFD966!important;}
 
-/* 1. 하단 계통(메인 카테고리) 버튼 - 폰트 강제 적용(p, span) */
+/* 1. 하단 계통(메인 카테고리) 버튼 - 폰트 강제 적용 */
 .category-section div.stButton>button {
   height:80px; border-radius:12px; box-shadow:2px 2px 8px rgba(0,0,0,.4); margin-bottom:8px;
-}
-.category-section div.stButton>button p, .category-section div.stButton>button span {
   font-size:40px!important; font-weight:bold!important; color:#E8E8E8!important;
 }
-.category-section div.stButton>button:hover p, .category-section div.stButton>button:hover span {
+.category-section div.stButton>button *,
+.category-section div.stButton>button p,
+.category-section div.stButton>button span,
+.category-section div.stButton>button div {
+  font-size:40px!important; font-weight:bold!important; color:#E8E8E8!important;
+}
+.category-section div.stButton>button:hover *,
+.category-section div.stButton>button:hover p,
+.category-section div.stButton>button:hover span {
   color:#FFD966!important;
+}
+@media (max-width: 600px) {
+  .category-section div.stButton>button { height:60px!important; }
+  .category-section div.stButton>button *, .category-section div.stButton>button p,
+  .category-section div.stButton>button span { font-size:26px!important; }
 }
 
 /* 2. 상단 메뉴(메인/요약도/설정) 버튼 - 폰트 강제 적용(p, span) */
 .menu-section div.stButton>button {
   border:1.5px solid #FFD966!important; background:#3A3A3A!important;
   height:70px!important; border-radius:10px!important;
+  font-size:40px!important; color:#FFD966!important;
 }
-.menu-section div.stButton>button p, .menu-section div.stButton>button span {
+.menu-section div.stButton>button *,
+.menu-section div.stButton>button p,
+.menu-section div.stButton>button span,
+.menu-section div.stButton>button div {
   font-size:40px!important; color:#FFD966!important;
 }
 .menu-section div.stButton>button:hover {background:#FFD966!important;}
-.menu-section div.stButton>button:hover p, .menu-section div.stButton>button:hover span {
+.menu-section div.stButton>button:hover,
+.menu-section div.stButton>button:hover *,
+.menu-section div.stButton>button:hover p,
+.menu-section div.stButton>button:hover span {
   color:#1E1E1E!important;
+}
+
+/* 반응형: 모바일에서 메뉴 버튼 높이/폰트 축소 */
+@media (max-width: 600px) {
+  .menu-section div.stButton>button {
+    height:55px!important;
+  }
+  .menu-section div.stButton>button *,
+  .menu-section div.stButton>button p,
+  .menu-section div.stButton>button span {
+    font-size:26px!important;
+  }
 }
 
 /* 3. 뒤로가기 버튼 유지 */
@@ -303,9 +333,13 @@ def summary_dialog():
 st.markdown("<p class='header-title'>⚡ 설비 유지보수 시스템</p>", unsafe_allow_html=True)
 
 st.markdown('<div class="menu-section">', unsafe_allow_html=True)
-if st.button("🏠 메인", use_container_width=True, on_click=go_to_main): pass
-if st.button("📋 요약도", use_container_width=True): summary_dialog()
-if st.button("⚙️ 설정", use_container_width=True):   admin_dialog()
+m1, m2, m3 = st.columns(3)
+with m1:
+    if st.button("🏠 메인", use_container_width=True, on_click=go_to_main): pass
+with m2:
+    if st.button("📋 요약도", use_container_width=True): summary_dialog()
+with m3:
+    if st.button("⚙️ 설정", use_container_width=True): admin_dialog()
 st.markdown('</div>', unsafe_allow_html=True)
 
 st.divider()
