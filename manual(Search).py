@@ -11,30 +11,15 @@ st.set_page_config(page_title="철도장비 스마트 관리체계", layout="wid
 st.markdown("""<style>
 .stApp,[data-testid="stAppViewContainer"]{background:#333;color:#E8E8E8}
 [data-testid="stHeader"],[data-testid="stSidebar"]{background:#2A2A2A}
-.block-container{padding:2rem 1rem 1rem !important;background:#333}
+.block-container{padding:4rem 1rem 1rem !important;background:#333}
 
 /* ── 제목: 항상 한 줄, 화면 너비에 맞게 폰트 자동 축소 ── */
 .header-title{
   font-weight:bold;color:#FFD966;text-align:center;
-  margin-top:5px;margin-bottom:15px;letter-spacing:2px;
+  margin-top:9px;margin-bottom:20px;letter-spacing:2px;
   text-shadow:0 2px 5px rgba(0,0,0,.6);
   font-size:clamp(20px, 5vw, 45px)!important;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}
-
-/* ── 요약도 이미지 컨테이너 (반응형) ── */
-.summary-wrapper {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    margin-bottom: 20px;
-}
-.summary-wrapper img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 12px;
-    border: 2px solid #4A4A4A;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
 /* ── 공통 Streamlit 버튼 (다이얼로그 내부용) ── */
@@ -92,7 +77,7 @@ hr{border-color:#4A4A4A!important}
   padding-bottom:8px;border-bottom:1px solid #555}
 
 /* ════════════════════════════════════════
-   순수 HTML 메뉴 버튼 그리드 (3열)
+   순수 HTML 메뉴 버튼 그리드 (3열, 항상 한 줄)
    ════════════════════════════════════════ */
 .html-menu-grid{
   display:grid;
@@ -115,6 +100,8 @@ hr{border-color:#4A4A4A!important}
    ════════════════════════════════════════ */
 .html-cat-grid{
   display:grid;
+  /*grid-template-columns:repeat(2,1fr);
+  grid-template-rows:repeat(2,1fr);*/
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap:10px;
   margin-top:10px;
@@ -243,7 +230,7 @@ for k, v in [("page","main"), ("deleted_img_indices",set()), ("admin_last_key","
     if k not in ss: ss[k] = v
 
 # ════════════════════════════════════════
-#  비밀번호 및 관리자 모드 다이얼로그
+#  비밀번호
 # ════════════════════════════════════════
 DEFAULT_PW = "7895"
 
@@ -254,6 +241,9 @@ def save_pw(new_pw: str) -> bool:
     details.setdefault("__meta__", {})["password"] = new_pw
     return save_data(details)
 
+# ════════════════════════════════════════
+#  다이얼로그
+# ════════════════════════════════════════
 @st.dialog("🔐 관리자 모드")
 def admin_dialog():
     pw = st.text_input("비밀번호", type="password")
@@ -289,37 +279,60 @@ def admin_dialog():
                     if st.button("↩️", key=f"restore_{idx}"): ss.deleted_img_indices.discard(idx)
                 else:
                     if st.button("🗑️", key=f"del_{idx}"): ss.deleted_img_indices.add(idx)
+        if not cur_imgs: st.caption("첨부된 이미지가 없습니다.")
 
-        new_imgs = st.file_uploader("이미지 추가", type=["png","jpg","jpeg"],
+        st.markdown("**➕ 이미지 추가 업로드**")
+        new_imgs = st.file_uploader("이미지 선택 (png/jpg/jpeg)", type=["png","jpg","jpeg"],
                                     accept_multiple_files=True, key=f"uploader__{cur_key}")
 
         if st.button("💾 저장 (GitHub 반영)", key="btn_save"):
             kept = [u for i, u in enumerate(cur_imgs) if i not in ss.deleted_img_indices]
             uploaded = []
             if new_imgs:
-                with st.spinner("업로드 중..."):
+                with st.spinner("이미지 업로드 중..."):
                     uploaded = [u for f in new_imgs if (u := upload_image(f))]
-            details[t_main][t_sub] = {"text": new_text, "images": kept + uploaded}
+            all_imgs = kept + uploaded
+            details[t_main][t_sub] = {"text": new_text, "images": all_imgs} if all_imgs else new_text
             if save_data(details):
                 ss.deleted_img_indices = set()
                 st.success("저장 완료!")
 
     with tab_pw:
+        st.markdown("현재 비밀번호로 인증된 상태입니다.")
         p1 = st.text_input("새 비밀번호", type="password", key="new_pw1")
         p2 = st.text_input("새 비밀번호 확인", type="password", key="new_pw2")
-        if st.button("🔒 변경", key="btn_change_pw"):
-            if p1 and p1 == p2 and save_pw(p1): st.success("변경 완료.")
+        if st.button("🔒 비밀번호 변경", key="btn_change_pw"):
+            if not p1:              st.error("새 비밀번호를 입력해 주세요.")
+            elif p1 != p2:          st.error("비밀번호가 일치하지 않습니다.")
+            elif p1 == get_pw():    st.warning("현재 비밀번호와 동일합니다.")
+            elif save_pw(p1):       st.success("변경 완료. 다음 로그인부터 적용됩니다.")
+
+@st.dialog("📋 전체 요약도")
+def summary_dialog():
+    res = requests.get(f"{RAW_BASE}/summary.png")
+    if res.status_code == 200:
+        img_bytes = res.content
+    elif os.path.exists("summary.png"):
+        img_bytes = open("summary.png", "rb").read()
+    else:
+        st.error("summary.png를 찾을 수 없습니다.")
+        st.info("GitHub 저장소 루트에 summary.png를 업로드해 주세요."); return
+    st.image(img_bytes, use_container_width=True)
+    st.download_button("⬇️ 이미지 다운로드", img_bytes, "summary.png", "image/png",
+                       use_container_width=True)
 
 # ════════════════════════════════════════
 #  화면 렌더링
 # ════════════════════════════════════════
 
-# ── query_params 처리 ──
+# ── query_params로 HTML 버튼 클릭 처리 ──
 qp = st.query_params
 if "nav" in qp:
     nav = qp["nav"]
     if nav == "main":
         ss.page = "main"; ss.search_query = ""
+    elif nav == "summary":
+        st.query_params.clear(); summary_dialog()
     elif nav == "admin":
         st.query_params.clear(); admin_dialog()
     elif nav.startswith("cat:"):
@@ -328,20 +341,10 @@ if "nav" in qp:
             ss.selected_main = cat_key; ss.page = "detail"
     st.query_params.clear()
 
-# ── 1. 제목 ──
+# ── 제목 ──
 st.markdown("<p class='header-title'>철도장비 스마트 관리체계</p>", unsafe_allow_html=True)
 
-# ── 2. 요약도 상시 노출 (GitHub 기반 반응형) ──
-summary_img_url = f"{RAW_BASE}/summary.png"
-st.markdown('<div class="summary-wrapper">', unsafe_allow_html=True)
-try:
-    # use_container_width=True로 설정하여 모바일/PC 화면비에 맞춰 자동 조절
-    st.image(summary_img_url, use_container_width=True)
-except:
-    st.caption("요약도 이미지(summary.png)를 불러올 수 없습니다.")
-st.markdown('</div>', unsafe_allow_html=True)
-
-# ── 3. 상단 메뉴 ──
+# ── 상단 메뉴: HTML 3열 그리드 (항상 한 줄) ──
 st.markdown("""
 <div class="html-menu-grid">
   <form action="" method="get">
@@ -349,8 +352,8 @@ st.markdown("""
     <button class="html-menu-btn" type="submit">🏠 메인</button>
   </form>
   <form action="" method="get">
-    <input type="hidden" name="nav" value="main">
-    <button class="html-menu-btn" type="submit">🔄 새로고침</button>
+    <input type="hidden" name="nav" value="summary">
+    <button class="html-menu-btn" type="submit">📋 요약도</button>
   </form>
   <form action="" method="get">
     <input type="hidden" name="nav" value="admin">
@@ -361,7 +364,6 @@ st.markdown("""
 
 st.divider()
 
-# ── 4. 검색창 ──
 query = st.text_input("🔍 문제점 검색", placeholder="단어 입력", label_visibility="collapsed", key="search_query")
 
 if query:
@@ -377,7 +379,7 @@ if query:
     if not found: st.info("검색 결과가 없습니다.")
 
 elif ss.page == 'main':
-    # ── 카테고리 HTML 그리드 ──
+    # ── 카테고리 4분할 HTML 그리드 ──
     cat_keys = [k for k in DB_KEYS if k != "__meta__"]
     btns_html = "".join(
         f'<form action="" method="get">'
