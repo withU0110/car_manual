@@ -150,9 +150,9 @@ elif ss.page == 'main':
     st.markdown('<p class="manual-section-title">📂 관련 업무 매뉴얼</p>', unsafe_allow_html=True)
         
     manuals = [
-        {"title": "📕모터카 운전원 일상점검", "file": "daily_inspection.pdf"},
-        {"title": "📗비상지 조치방법", "file": "emergency_manual.pdf"},
-        {"title": "📘모터카 유지보수 매뉴얼", "file": "maintenance_manual.pdf"},
+        {"title": "모터카 운전원 일상점검", "file": "daily_inspection.pdf"},
+        {"title": "비상시 조치방법", "file": "emergency_manual.pdf"},
+        {"title": "모터카 유지보수 매뉴얼", "file": "maintenance_manual.pdf"},
       #{"title": "비상시 대응 절차", "file": "emergency_step.pdf"} 
     ]
 
@@ -163,7 +163,7 @@ elif ss.page == 'main':
             if i + j < len(manuals):
                 m = manuals[i + j]
                 # CSS 클래스 적용을 위해 st.markdown 대신 st.button 사용 후 스타일 강제 적용
-                if cols[j].button(f"📄 {m['title']}", key=f"m_{i+j}", help="클릭 시 매뉴얼 팝업", use_container_width=True):
+                if cols[j].button(f"📚 {m['title']}", key=f"m_{i+j}", help="클릭 시 매뉴얼 팝업", use_container_width=True):
                     open_manual(m['title'], m['file'])
                 # 버튼 스타일 강제 주입
                 st.markdown(f"""<style>div[data-testid="stColumn"]:nth-of-type({j+1}) button[key="m_{i+j}"] {{ border: 1.5px solid #FFD966 !important; color: #FFD966 !important; background: #3A3A3A !important; height: 60px !important; font-size: 20px !important; font-weight: bold !important; border-radius: 10px !important; }}</style>""", unsafe_allow_html=True)
