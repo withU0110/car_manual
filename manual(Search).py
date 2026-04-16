@@ -24,7 +24,7 @@ st.markdown("""<style>
 
 /* ── 매뉴얼 섹션 타이틀 ── */
 .manual-section-title {
-    font-size: 28px;
+    font-size: 36px;
     font-weight: bold;
     color: #FFD966;
     margin: 30px 0 15px 0;
