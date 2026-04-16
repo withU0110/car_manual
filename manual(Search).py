@@ -146,7 +146,6 @@ elif ss.page == 'main':
     st.markdown(f'<div class="html-cat-grid">{btns_html}</div>', unsafe_allow_html=True)
 
     # ── 2. 관련 업무 매뉴얼 섹션 (요청사항 반영) ──
-    st.divider() # 가로 구분선
     st.markdown('<p class="manual-section-title">📂 관련 업무 매뉴얼</p>', unsafe_allow_html=True)
         
     manuals = [
