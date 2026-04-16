@@ -150,10 +150,10 @@ elif ss.page == 'main':
     st.markdown('<p class="manual-section-title">📂 관련 업무 매뉴얼</p>', unsafe_allow_html=True)
         
     manuals = [
-        {"title": "유지보수 표준 매뉴얼", "file": "maintenance_std.pdf"},
-        {"title": "안전작업 지침서", "file": "safety_guide.pdf"},
-        {"title": "장비 운용 가이드", "file": "operation_manual.pdf"},
-        {"title": "비상시 대응 절차", "file": "emergency_step.pdf"}
+        {"title": "📕모터카 운전원 일상점검", "file": "daily_inspection.pdf"},
+        {"title": "📗비상지 조치방법", "file": "emergency_manual.pdf"},
+        {"title": "📘모터카 유지보수 매뉴얼", "file": "maintenance_manual.pdf"},
+      #{"title": "비상시 대응 절차", "file": "emergency_step.pdf"} 
     ]
 
     # 한 줄에 2개씩 배치
