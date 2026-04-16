@@ -24,7 +24,7 @@ st.markdown("""<style>
 
 /* ── 매뉴얼 섹션 타이틀 ── */
 .manual-section-title {
-    font-size: 55px;
+    font-size: 36px;
     font-weight: bold;
     color: #FFD966;
     margin: 30px 0 15px 0;
@@ -43,9 +43,9 @@ div.stButton > button.manual-btn-style {
     border-radius: 10px !important;
     transition: 0.2s;
 }
-div.stButton > button.manual-btn-style:hover {
+/*div.stButton > button.manual-btn-style:hover {
     background: #FFD966 !important;
-    color: #1E1E1E !important;
+    color: #1E1E1E !important;*/
 }
 
 /* ── 기존 UI 스타일 유지 ── */
