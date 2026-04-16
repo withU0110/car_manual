@@ -43,9 +43,9 @@ div.stButton > button.manual-btn-style {
     border-radius: 10px !important;
     transition: 0.2s;
 }
-/*div.stButton > button.manual-btn-style:hover {
+div.stButton > button.manual-btn-style:hover {
     background: #FFD966 !important;
-    color: #1E1E1E !important;*/
+    color: #1E1E1E !important;
 }
 
 /* ── 기존 UI 스타일 유지 ── */
