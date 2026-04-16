@@ -209,8 +209,6 @@ elif ss.page == 'main':
     st.markdown('<div class="manual-box">', unsafe_allow_html=True)
     st.markdown('<span class="manual-title">📚 관련 업무 매뉴얼</span>', unsafe_allow_html=True)
     
-    # 다운로드할 파일 정보 (버튼이름: 실제파일명)
-    # 깃허브 저장소의 /manuals/ 폴더 안에 파일을 넣는다고 가정합니다.
     manual_files = {
         "📘 유지보수 매뉴얼": "maintenance_manual.pdf",
         "📙 비상시 조치방법": "emergency_manual.pdf",
