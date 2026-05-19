@@ -238,12 +238,47 @@ elif ss.page == 'detail':
     for sub, content in details[cat].items():
         with st.expander(f"🔎 {sub}", expanded=False): render_card(content)
 
-# 쿼리 파라미터 처리 (페이지 전환용)
+# ── [추가] 요약도 화면 렌더링 ──
+elif ss.page == 'summary':
+    if st.button("◀  뒤로가기"): ss.page = 'main'; st.rerun()
+    st.markdown("<div class='cat-header'>📋 철도장비 요약도</div>", unsafe_allow_html=True)
+    
+    # 예시: GitHub에 등록된 요약도 사진 파일 가져오기 (파일명은 실제 보관 중인 파일명으로 수정하세요)
+    summary_img_url = f"{RAW_BASE}/images/summary_diagram.png" 
+    try:
+        res = requests.get(summary_img_url)
+        if res.status_code == 200:
+            st.image(res.content, caption="철도장비 시스템 요약도", use_container_width=True)
+        else:
+            st.error(f"GitHub에서 요약도 이미지를 불러올 수 없습니다. (URL: {summary_img_url})")
+    except Exception as e:
+        st.error(f"이미지 로딩 중 오류 발생: {e}")
+
+# ── [추가] 설정(관리자모드) 화면 렌더링 ──
+elif ss.page == 'admin':
+    if st.button("◀  뒤로가기"): ss.page = 'main'; st.rerun()
+    st.markdown("<div class='cat-header'>⚙️ 시스템 설정 (관리자 모드)</div>", unsafe_allow_html=True)
+    st.info("데이터 수정 및 관리자 옵션 기능을 여기에 구현할 수 있습니다.")
+    
+    # 예시: 현재 로드된 데이터 JSON 형태로 보여주기
+    st.json(details)
+
+
+# ════════════════════════════════════════
+#  쿼리 파라미터 처리 (페이지 전환용) - 수정됨
+# ════════════════════════════════════════
 qp = st.query_params
 if "nav" in qp:
     nav = qp["nav"]
-    if nav == "main": ss.page = "main"
+    if nav == "main": 
+        ss.page = "main"
+    elif nav == "summary": 
+        ss.page = "summary"  # 요약도 페이지 상태 저장
+    elif nav == "admin": 
+        ss.page = "admin"    # 설정 페이지 상태 저장
     elif nav.startswith("cat:"):
-        ss.selected_main = nav[4:]; ss.page = "detail"
+        ss.selected_main = nav[4:]
+        ss.page = "detail"
+        
     st.query_params.clear()
     st.rerun()
