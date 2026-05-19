@@ -13,7 +13,6 @@ st.markdown("""<style>
 [data-testid="stHeader"],[data-testid="stSidebar"]{background:#2A2A2A}
 .block-container{padding:4rem 1rem 1rem !important;background:#333}
 
-/* ── 제목 ── */
 .header-title{
   font-weight:bold;color:#FFD966;text-align:center;
   margin-top:9px;margin-bottom:20px;letter-spacing:2px;
@@ -22,7 +21,6 @@ st.markdown("""<style>
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 
-/* ── 관련 업무 매뉴얼 섹션 스타일 ── */
 .manual-box {
     border: 2px solid #555;
     border-radius: 12px;
@@ -39,12 +37,10 @@ st.markdown("""<style>
     display: block;
 }
 
-/* ── 공통 Streamlit 버튼 ── */
 div.stButton>button{width:100%;font-weight:bold;border-radius:8px;background:#444!important;
   border:1px solid #555!important;color:#E8E8E8!important;transition:.2s}
 div.stButton>button:hover{background:#505050!important;border-color:#FFD966!important;}
 
-/* ── 다운로드 버튼 전용 스타일 (매뉴얼 섹션 내) ── */
 div.stDownloadButton>button {
     background: #3A3A3A !important;
     border: 1px solid #7CB9E8 !important;
@@ -57,7 +53,6 @@ div.stDownloadButton>button:hover {
     color: #1E1E1E !important;
 }
 
-/* ── 뒤로가기 버튼 ── */
 .back-btn div.stButton>button {
   height:45px!important; border:1px solid #7CB9E8!important;
   border-radius:8px!important; background:#3A3A3A!important;
@@ -71,21 +66,17 @@ div.stDownloadButton>button:hover {
   color:#1E1E1E!important;
 }
 
-/* ── 상세 내용 카드 ── */
 .detail-card-content{padding:16px 18px;background:#3E3E3E;border-radius:10px;
   border-left:5px solid #FFD966;font-family:'Nanum Gothic','Malgun Gothic',sans-serif;
   white-space:pre-wrap;word-break:keep-all;font-size:20px;line-height:1.85;color:#E8E8E8}
 
-/* ── Expander ── */
 [data-testid="stExpander"]{background:#3A3A3A!important;border:1px solid #4A4A4A!important;
   border-radius:10px!important;margin-bottom:6px}
 [data-testid="stExpander"] summary{color:#E8E8E8!important;font-weight:bold;font-size:40px!important;padding:15px!important}
 
-/* ── 상세 화면 카테고리 제목 ── */
 .cat-header{font-size:40px;font-weight:bold;color:#FFD966;margin:6px 0 15px;
   padding-bottom:8px;border-bottom:1px solid #555}
 
-/* ── 메뉴 버튼 그리드 ── */
 .html-menu-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
 .html-menu-grid form{margin:0;padding:0;}
 .html-menu-btn{
@@ -95,7 +86,6 @@ div.stDownloadButton>button:hover {
 }
 .html-menu-btn:hover{background:#FFD966;color:#1E1E1E;}
 
-/* ── 카테고리 그리드 ── */
 .html-cat-grid{display:grid;grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));gap:10px;margin-top:10px;}
 .html-cat-grid form{margin:0;padding:0;}
 .html-cat-btn{
@@ -104,6 +94,40 @@ div.stDownloadButton>button:hover {
   box-shadow:2px 2px 8px rgba(0,0,0,.4);transition:.2s;
 }
 .html-cat-btn:hover{background:#505050;color:#FFD966;}
+
+/* ── 요약도 이미지 ── */
+.summary-box {
+    border: 2px solid #FFD966;
+    border-radius: 12px;
+    padding: 20px;
+    background-color: #2D2D2D;
+    margin-top: 10px;
+    text-align: center;
+}
+.summary-title {
+    font-size: 30px;
+    font-weight: bold;
+    color: #FFD966;
+    margin-bottom: 16px;
+    display: block;
+}
+
+/* ── 설정 박스 ── */
+.admin-box {
+    border: 2px solid #7CB9E8;
+    border-radius: 12px;
+    padding: 28px;
+    background-color: #2D2D2D;
+    margin-top: 10px;
+}
+.admin-title {
+    font-size: 30px;
+    font-weight: bold;
+    color: #7CB9E8;
+    margin-bottom: 20px;
+    display: block;
+    text-align: center;
+}
 </style>""", unsafe_allow_html=True)
 
 # ════════════════════════════════════════
@@ -163,16 +187,33 @@ def render_card(content):
     for url in images: st.image(url, use_container_width=True)
 
 # ════════════════════════════════════════
+#  요약도 이미지 로드 (png → jpg 순으로 시도)
+# ════════════════════════════════════════
+@st.cache_data(ttl=300)
+def load_summary_image():
+    """메인 폴더의 summary.png / summary.jpg 순으로 시도"""
+    for ext in ["png", "jpg", "jpeg"]:
+        url = f"{RAW_BASE}/summary.{ext}"
+        try:
+            res = requests.get(url, timeout=10)
+            if res.status_code == 200:
+                return res.content, ext
+        except:
+            continue
+    return None, None
+
+# ════════════════════════════════════════
 #  메인 로직
 # ════════════════════════════════════════
 details = load_data()
 DB_KEYS = list(details.keys())
 
 ss = st.session_state
-if "page" not in ss: ss.page = 'main'
+if "page"         not in ss: ss.page = 'main'
 if "search_query" not in ss: ss.search_query = ""
+if "admin_auth"   not in ss: ss.admin_auth = False   # 관리자 인증 상태
 
-# 상단 제목 및 메뉴
+# ── 상단 제목 ──
 st.markdown("<p class='header-title'>철도장비 스마트 관리체계</p>", unsafe_allow_html=True)
 st.markdown("""
 <div class="html-menu-grid">
@@ -184,9 +225,18 @@ st.markdown("""
 
 st.divider()
 
-# 검색창
-query = st.text_input("🔍 문제점 검색", placeholder="단어 입력", label_visibility="collapsed", key="search_query")
+# ── 검색창 (요약도·설정 페이지에서는 숨김) ──
+if ss.page not in ("summary", "admin"):
+    query = st.text_input("🔍 문제점 검색", placeholder="단어 입력",
+                          label_visibility="collapsed", key="search_query")
+else:
+    query = ""
 
+# ════════════════════════════════════════
+#  페이지 렌더링
+# ════════════════════════════════════════
+
+# ── 검색 결과 ──
 if query:
     found = False
     for cat, items in details.items():
@@ -195,54 +245,105 @@ if query:
             text, _ = parse_content(content)
             if query in text or query in sub:
                 found = True
-                with st.expander(f"✅ {clean_key(cat)} > {sub}", expanded=True): render_card(content)
+                with st.expander(f"✅ {clean_key(cat)} > {sub}", expanded=True):
+                    render_card(content)
     if not found: st.info("검색 결과가 없습니다.")
 
+# ── 메인 ──
 elif ss.page == 'main':
-    # 카테고리 그리드
     cat_keys = [k for k in DB_KEYS if k != "__meta__"]
-    btns_html = "".join(f'<form action="" method="get"><input type="hidden" name="nav" value="cat:{k}"><button class="html-cat-btn" type="submit">{clean_key(k)}</button></form>' for k in cat_keys)
+    btns_html = "".join(
+        f'<form action="" method="get"><input type="hidden" name="nav" value="cat:{k}">'
+        f'<button class="html-cat-btn" type="submit">{clean_key(k)}</button></form>'
+        for k in cat_keys
+    )
     st.markdown(f'<div class="html-cat-grid">{btns_html}</div>', unsafe_allow_html=True)
 
-    # ── 추가된 섹션: 관련 업무 매뉴얼 ──
+    # 관련 업무 매뉴얼
     st.divider()
     st.markdown('<div class="manual-box">', unsafe_allow_html=True)
     st.markdown('<span class="manual-title">📚 관련 업무 매뉴얼</span>', unsafe_allow_html=True)
-    
     manual_files = {
         "📘 유지보수 매뉴얼": "maintenance_manual.pdf",
         "📙 비상시 조치방법": "emergency_manual.pdf",
         "📗 운전원 일상점검": "daily_inspection.pdf"
     }
-    
     m_cols = st.columns(len(manual_files))
     for idx, (label, filename) in enumerate(manual_files.items()):
         with m_cols[idx]:
             file_url = f"{RAW_BASE}/manuals/{filename}"
             try:
-                # 파일 데이터를 가져와서 버튼에 연결
                 res = requests.get(file_url)
                 if res.status_code == 200:
-                    st.download_button(label=label, data=res.content, file_name=filename, key=f"btn_dl_{idx}")
+                    st.download_button(label=label, data=res.content,
+                                       file_name=filename, key=f"btn_dl_{idx}")
                 else:
                     st.button(f"❌ {filename} 없음", disabled=True, key=f"err_{idx}")
             except:
                 st.button("⚠️ 연결 오류", disabled=True, key=f"err_conn_{idx}")
-                
     st.markdown('</div>', unsafe_allow_html=True)
 
+# ── 요약도 ──  ★ 핵심 추가
+elif ss.page == 'summary':
+    st.markdown('<div class="summary-box">', unsafe_allow_html=True)
+    st.markdown('<span class="summary-title">📋 요약도</span>', unsafe_allow_html=True)
+
+    img_data, ext = load_summary_image()
+    if img_data:
+        st.image(img_data, use_container_width=True,
+                 caption="summary." + ext)
+    else:
+        st.warning("⚠️ 요약도 이미지를 불러올 수 없습니다.\n"
+                   "GitHub 메인 폴더에 summary.png 또는 summary.jpg 파일이 있는지 확인해 주세요.")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# ── 설정 ──  ★ 핵심 추가
+elif ss.page == 'admin':
+    st.markdown('<div class="admin-box">', unsafe_allow_html=True)
+    st.markdown('<span class="admin-title">⚙️ 관리자 설정</span>', unsafe_allow_html=True)
+
+    if not ss.admin_auth:
+        pw = st.text_input("🔒 관리자 비밀번호", type="password", key="admin_pw_input")
+        if st.button("확인", key="admin_login_btn"):
+            correct_pw = st.secrets.get("ADMIN_PASSWORD", "1234")
+            if pw == correct_pw:
+                ss.admin_auth = True
+                st.rerun()
+            else:
+                st.error("비밀번호가 틀렸습니다.")
+    else:
+        st.success("✅ 관리자 모드")
+        st.info("ℹ️ 이 영역에 admin 기능을 붙여넣으세요.")
+
+        # ── 로그아웃 ──
+        if st.button("🔓 로그아웃", key="admin_logout"):
+            ss.admin_auth = False
+            st.rerun()
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# ── 상세 ──
 elif ss.page == 'detail':
     cat = ss.selected_main
-    if st.button("◀  뒤로가기"): ss.page = 'main'; st.rerun()
+    with st.container():
+        st.markdown('<div class="back-btn">', unsafe_allow_html=True)
+        if st.button("◀  뒤로가기"):
+            ss.page = 'main'; st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
     st.markdown(f"<div class='cat-header'>📍 {clean_key(cat)}</div>", unsafe_allow_html=True)
     for sub, content in details[cat].items():
-        with st.expander(f"🔎 {sub}", expanded=False): render_card(content)
+        with st.expander(f"🔎 {sub}", expanded=False):
+            render_card(content)
 
-# 쿼리 파라미터 처리 (페이지 전환용)
+# ════════════════════════════════════════
+#  쿼리 파라미터 처리 (페이지 전환)
+# ════════════════════════════════════════
 qp = st.query_params
 if "nav" in qp:
     nav = qp["nav"]
-    if nav == "main": ss.page = "main"
+    if   nav == "main":          ss.page = "main"
+    elif nav == "summary":       ss.page = "summary"     # ★ 추가
+    elif nav == "admin":         ss.page = "admin"       # ★ 추가
     elif nav.startswith("cat:"):
         ss.selected_main = nav[4:]; ss.page = "detail"
     st.query_params.clear()
